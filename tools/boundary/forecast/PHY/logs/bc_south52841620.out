@@ -1,0 +1,43 @@
+#####################################################################
+JobID 52841620 - begin Tue Feb 24 21:24:10 EST 2026
+---------------------------------------------------------------------
+Job Name: run_west.slurm
+User: Remi.Pages
+Host: pp327
+Scratch TMPDIR: /vftmp/Remi.Pages/job52841620
+Submit host: an005
+#####################################################################
+Loading gcp/2.3
+  Loading requirement: globus/system perlbrew/5.38.2
+Loading cdo/2.4.4
+  Loading requirement: mpich/4.2.3 zlib-ng/2.2.1 hdf5/1.14.5
+    intel-oneapi-mkl/2024.2.2 netcdf-c/4.9.2 proj/9.4.1 udunits/2.2.28
+Loading nco/5.2.4
+  Loading requirement: gsl/2.8
+1994
+west zos
+west uv
+west thetao
+west so
+#####################################################################
+Job Name: run_west.slurm
+User: Remi.Pages
+Host: pp327
+Removed TMPDIR: /vftmp/Remi.Pages/job52841620
+Submit host: an005
+---------------------------------------------------------------------
+JobID 52841620 - end Tue Feb 24 21:26:20 EST 2026
+#####################################################################
+Account              cefi
+Partition            batch
+Constraints          -
+NCPUS                1
+Timelimit            1-00:00:00
+Elapsed              00:02:12
+UserCPU              00:01:39
+SystemCPU            00:00:01
+NodeMem              125.0G
+MaxRSS               1.7G
+ExitCode             0:0
+State                COMPLETED
+Comment              -

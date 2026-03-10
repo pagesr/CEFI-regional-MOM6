@@ -1,0 +1,10 @@
+output_dir: '/work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6/tools/boundary/forecast/BGC/outputs/'
+grid_file: '/work/Remi.Pages/GOA2p5k/GRID/clean_grid/ocean_hgrid.nc'
+time0: 1993-01-01
+last_time: 1994-01-01
+
+segments:
+  - id: 1
+    border: 'south'
+  - id: 2
+    border: 'west'

@@ -1,0 +1,40 @@
+#####################################################################
+JobID 52858728 - begin Wed Feb 25 18:24:55 EST 2026
+---------------------------------------------------------------------
+Job Name: run_west.slurm
+User: Remi.Pages
+Host: pp039
+Scratch TMPDIR: /vftmp/Remi.Pages/job52858728
+Submit host: an002
+#####################################################################
+Loading gcp/2.3
+  Loading requirement: globus/system perlbrew/5.38.2
+Loading cdo/2.4.4
+  Loading requirement: mpich/4.2.3 zlib-ng/2.2.1 hdf5/1.14.5
+    intel-oneapi-mkl/2024.2.2 netcdf-c/4.9.2 proj/9.4.1 udunits/2.2.28
+Loading nco/5.2.4
+  Loading requirement: gsl/2.8
+1994
+[2026-02-25T18:25:21.553] error: *** JOB 52858728 ON pp039 CANCELLED AT 2026-02-25T18:25:21 DUE to SIGNAL Terminated ***
+#####################################################################
+Job Name: run_west.slurm
+User: Remi.Pages
+Host: pp039
+Removed TMPDIR: /vftmp/Remi.Pages/job52858728
+Submit host: an002
+---------------------------------------------------------------------
+JobID 52858728 - end Wed Feb 25 18:25:21 EST 2026
+#####################################################################
+Account              cefi
+Partition            batch
+Constraints          -
+NCPUS                1
+Timelimit            1-00:00:00
+Elapsed              00:00:27
+UserCPU              00:00:04
+SystemCPU            00:00:01
+NodeMem              45.9G
+MaxRSS               501.5M
+ExitCode             0:0
+State                CANCELLED by 21556
+Comment              -

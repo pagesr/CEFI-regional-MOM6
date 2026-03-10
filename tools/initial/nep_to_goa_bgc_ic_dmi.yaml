@@ -1,0 +1,105 @@
+# nep_to_goa_bgc_ic.yaml
+
+debug: true
+
+GOA_STATIC: "/archive/Remi.Pages/fre/Arc_12/2026_02.01/CGOA_BGC_2025_07_base_nep_phy_feb26/gfdl.ncrc6-intel23-prod/pp/ocean_daily/ocean_daily.static.nc"
+NEP_STATIC: "/archive/Liz.Drenkard/fre/cefi/NEP/2025_07/NEP10k_202507_physics_bgc/gfdl.ncrc6-intel23-repro/pp/ocean_daily/ocean_daily.static.nc"
+NEP_RESTART_DIR: "/archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/20120101"
+
+reuse_weights: true
+regrid_tracer_weights: "regrid_bilin_bgc.nc"
+tracer_method: "nearest_s2d"
+
+OUT_IC: "/work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6/tools/initial/outputs_CGOA/ic_nep_to_goa_bgc_dmitry.nc"
+IC_DATE: "1993-01-01T00:00:00"
+TIME_REF: "1993-01-01T00:00:00"
+TIME_UNITS: "days since 1993-01-01 00:00:00"
+TIME_CAL: "proleptic_gregorian"
+
+missing_to_zero:
+  - di14c
+  - dic14
+  - do14
+  - do14c
+  - irr_mem_dp
+  - nh3
+
+BGC_VARS:
+  - no3
+  - o2
+  - po4
+  - sio4
+  - dic
+  - alk
+  - cadet_arag
+  - cadet_calc
+  - fed
+  - fedi
+  - felg
+  - fedet
+  - fesm
+  - ldon
+  - ldop
+  - lith
+  - lithdet
+  - nbact
+  - ndet
+  - ndi
+  - nlg
+  - nsm
+  - nh4
+  - pdet
+  - srdon
+  - srdop
+  - sldon
+  - sldop
+  - sidet
+  - silg
+  - nsmz
+  - nmdz
+  - nlgz
+  - simd
+  - femd
+  - nmd
+  - psm
+  - pmd
+  - plg
+  - pdi
+  - di14c
+  - dic14
+  - do14
+  - do14c
+  - nh3
+  - mu_mem_nsm
+  - mu_mem_nlg
+  - mu_mem_ndi
+  - irr_aclm
+  - fedet_btf
+  - sidet_btf
+  - pdet_btf
+  - ndet_btf
+  - lithdet_btf
+  - cadet_calc_btf
+  - cadet_arag_btf
+  - co3_ion
+  - cased
+  - chl
+  - nsm_btf
+  - nmd_btf
+  - nlg_btf
+  - ndi_btf
+  - fesm_btf
+  - femd_btf
+  - felg_btf
+  - fedi_btf
+  - simd_btf
+  - silg_btf
+  - pdi_btf
+  - plg_btf
+  - pmd_btf
+  - psm_btf
+  - irr_mem_dp
+  - irr_aclm_sfc
+  - irr_aclm_z
+  - mu_mem_nmd
+  - htotal

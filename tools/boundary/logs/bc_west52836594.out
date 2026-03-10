@@ -1,0 +1,193 @@
+#####################################################################
+JobID 52836594 - begin Tue Feb 24 15:12:25 EST 2026
+---------------------------------------------------------------------
+Job Name: run_west.slurm
+User: Remi.Pages
+Host: pp049
+Scratch TMPDIR: /vftmp/Remi.Pages/job52836594
+Submit host: an200
+#####################################################################
+Loading gcp/2.3
+  Loading requirement: globus/system perlbrew/5.38.2
+Loading cdo/2.4.4
+  Loading requirement: mpich/4.2.3 zlib-ng/2.2.1 hdf5/1.14.5
+    intel-oneapi-mkl/2024.2.2 netcdf-c/4.9.2 proj/9.4.1 udunits/2.2.28
+Loading nco/5.2.4
+  Loading requirement: gsl/2.8
+1994
+west zos
+west uv
+west thetao
+west so
+1995
+west zos
+west uv
+west thetao
+west so
+1996
+west zos
+west uv
+west thetao
+west so
+1997
+west zos
+west uv
+west thetao
+west so
+1998
+west zos
+west uv
+west thetao
+west so
+1999
+west zos
+west uv
+west thetao
+west so
+2000
+west zos
+west uv
+west thetao
+west so
+2001
+west zos
+west uv
+west thetao
+west so
+2002
+west zos
+west uv
+west thetao
+west so
+2003
+west zos
+west uv
+west thetao
+west so
+2004
+west zos
+west uv
+west thetao
+west so
+2005
+west zos
+west uv
+west thetao
+west so
+2006
+west zos
+west uv
+west thetao
+west so
+2007
+west zos
+west uv
+west thetao
+west so
+2008
+west zos
+west uv
+west thetao
+west so
+2009
+west zos
+west uv
+west thetao
+west so
+2010
+west zos
+west uv
+west thetao
+west so
+2011
+west zos
+west uv
+west thetao
+west so
+2012
+west zos
+west uv
+west thetao
+west so
+2013
+west zos
+west uv
+west thetao
+west so
+2014
+west zos
+west uv
+west thetao
+west so
+2015
+west zos
+west uv
+west thetao
+west so
+2016
+west zos
+west uv
+west thetao
+west so
+2017
+west zos
+west uv
+west thetao
+west so
+2018
+west zos
+west uv
+west thetao
+west so
+2019
+west zos
+west uv
+west thetao
+west so
+2020
+west zos
+west uv
+west thetao
+west so
+2021
+west zos
+west uv
+west thetao
+west so
+2022
+west zos
+west uv
+west thetao
+west so
+2023
+west zos
+west uv
+west thetao
+west so
+2024
+west zos
+west uv
+west thetao
+west so
+#####################################################################
+Job Name: run_west.slurm
+User: Remi.Pages
+Host: pp049
+Removed TMPDIR: /vftmp/Remi.Pages/job52836594
+Submit host: an200
+---------------------------------------------------------------------
+JobID 52836594 - end Wed Feb 25 07:02:39 EST 2026
+#####################################################################
+Account              cefi
+Partition            batch
+Constraints          -
+NCPUS                1
+Timelimit            1-00:00:00
+Elapsed              15:50:15
+UserCPU              05:15:51
+SystemCPU            02:10:55
+NodeMem              45.9G
+MaxRSS               44.6G
+ExitCode             0:0
+State                COMPLETED
+Comment              -

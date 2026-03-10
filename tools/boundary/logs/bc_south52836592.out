@@ -1,0 +1,193 @@
+#####################################################################
+JobID 52836592 - begin Tue Feb 24 15:11:06 EST 2026
+---------------------------------------------------------------------
+Job Name: run_south.slurm
+User: Remi.Pages
+Host: pp342
+Scratch TMPDIR: /vftmp/Remi.Pages/job52836592
+Submit host: an200
+#####################################################################
+Loading gcp/2.3
+  Loading requirement: globus/system perlbrew/5.38.2
+Loading cdo/2.4.4
+  Loading requirement: mpich/4.2.3 zlib-ng/2.2.1 hdf5/1.14.5
+    intel-oneapi-mkl/2024.2.2 netcdf-c/4.9.2 proj/9.4.1 udunits/2.2.28
+Loading nco/5.2.4
+  Loading requirement: gsl/2.8
+1994
+south zos
+south uv
+south thetao
+south so
+1995
+south zos
+south uv
+south thetao
+south so
+1996
+south zos
+south uv
+south thetao
+south so
+1997
+south zos
+south uv
+south thetao
+south so
+1998
+south zos
+south uv
+south thetao
+south so
+1999
+south zos
+south uv
+south thetao
+south so
+2000
+south zos
+south uv
+south thetao
+south so
+2001
+south zos
+south uv
+south thetao
+south so
+2002
+south zos
+south uv
+south thetao
+south so
+2003
+south zos
+south uv
+south thetao
+south so
+2004
+south zos
+south uv
+south thetao
+south so
+2005
+south zos
+south uv
+south thetao
+south so
+2006
+south zos
+south uv
+south thetao
+south so
+2007
+south zos
+south uv
+south thetao
+south so
+2008
+south zos
+south uv
+south thetao
+south so
+2009
+south zos
+south uv
+south thetao
+south so
+2010
+south zos
+south uv
+south thetao
+south so
+2011
+south zos
+south uv
+south thetao
+south so
+2012
+south zos
+south uv
+south thetao
+south so
+2013
+south zos
+south uv
+south thetao
+south so
+2014
+south zos
+south uv
+south thetao
+south so
+2015
+south zos
+south uv
+south thetao
+south so
+2016
+south zos
+south uv
+south thetao
+south so
+2017
+south zos
+south uv
+south thetao
+south so
+2018
+south zos
+south uv
+south thetao
+south so
+2019
+south zos
+south uv
+south thetao
+south so
+2020
+south zos
+south uv
+south thetao
+south so
+2021
+south zos
+south uv
+south thetao
+south so
+2022
+south zos
+south uv
+south thetao
+south so
+2023
+south zos
+south uv
+south thetao
+south so
+2024
+south zos
+south uv
+south thetao
+south so
+#####################################################################
+Job Name: run_south.slurm
+User: Remi.Pages
+Host: pp342
+Removed TMPDIR: /vftmp/Remi.Pages/job52836592
+Submit host: an200
+---------------------------------------------------------------------
+JobID 52836592 - end Tue Feb 24 20:46:30 EST 2026
+#####################################################################
+Account              cefi
+Partition            batch
+Constraints          -
+NCPUS                1
+Timelimit            1-00:00:00
+Elapsed              05:35:25
+UserCPU              01:42:51
+SystemCPU            00:51:08
+NodeMem              500.0G
+MaxRSS               431.7G
+ExitCode             0:0
+State                COMPLETED
+Comment              -

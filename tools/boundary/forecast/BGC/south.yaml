@@ -1,0 +1,80 @@
+# ----------------------------------
+# YEAR / ENSEMBLE
+# ----------------------------------
+year: 2012
+month: "01"
+ensemble: "01"
+
+# ----------------------------------
+# INPUT DATA
+# ----------------------------------
+
+# Option 1: Let script construct path from fct_dir
+fct_dir: /archive/Dmitry.Dukhovskoy/fre/NEP/forecast_bgc/NEPbgc_fcst_dailyOB01
+
+# Option 2 (uncomment to force exact file)
+# input_file: /archive/Dmitry.Dukhovskoy/fre/NEP/forecast_bgc/NEPbgc_fcst_dailyOB01/2012-01-e01/history/ocean_cobalt_tracers_month_z.nc
+
+# Use first 12 months only
+time_sel: first12   # options: first12 | all
+
+# ----------------------------------
+# GRIDS
+# ----------------------------------
+
+# NEP static grid (T-grid lon/lat)
+NEP_STATIC: /archive/Liz.Drenkard/fre/cefi/NEP/2025_07/NEP10k_202507_physics_bgc/gfdl.ncrc6-intel23-repro/pp/ocean_daily/ocean_daily.static.nc
+
+# GOA hgrid
+hgrid: /work/Remi.Pages/GOA2p5k/GRID/CGOA_2.5k/ocean_hgrid.nc
+
+# ----------------------------------
+# OUTPUT
+# ----------------------------------
+output_dir: ./OBC_CGOA_SOUTH_BGC_2012
+
+# Optional yearly concatenation
+ncrcat_years: false
+ncrcat_names: []
+
+# ----------------------------------
+# SEGMENTS
+# ----------------------------------
+segments:
+  - id: 1
+    border: south
+  - id: 2
+    border: "west"
+# ----------------------------------
+# COBALT TRACERS
+# ----------------------------------
+tracers:
+  - alk
+  - dic
+  - po4
+  - sio4
+  - o2
+  - no3
+  - nh4
+  - fed
+  - fedet
+  - ndet
+  - nbact
+  - nsmz
+  - nmdz
+  - nlgz
+  - chl
+  - chl_Lg
+  - chl_Md
+  - chl_Sm
+  - chl_Di
+  - simd
+  - silg
+  - ndi
+  - nlg
+  - nsm
+  - nmd
+  - pdi
+  - plg
+  - pmd
+  - psm

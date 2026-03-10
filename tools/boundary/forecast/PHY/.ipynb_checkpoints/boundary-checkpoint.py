@@ -420,12 +420,7 @@ class Segment():
             ds[lat_name].encoding['dtype'] = 'float64'
     
         # Time encoding (only if time exists)
-        # RP CHANGE TO TIME
         if 'time' in ds.variables:
-            ds['time'].encoding['units'] = 'hours since 1993-01-01 00:00:00'
-            ds['time'].encoding['calendar'] = 'gregorian'
-            ds['time'].encoding['dtype'] = 'float64'
-            ds['time'].encoding['_FillValue'] = 1.0e20  
             # If time doesn't already have a calendar/modulo, ensure a safe encoding
             if 'calendar' not in ds['time'].attrs and 'modulo' not in ds['time'].attrs:
                 ds['time'].encoding['calendar'] = 'gregorian'

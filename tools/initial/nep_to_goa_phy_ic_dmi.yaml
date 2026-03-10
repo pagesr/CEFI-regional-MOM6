@@ -1,0 +1,35 @@
+# nep_to_goa_phy_ic.yaml
+
+GOA_STATIC: /archive/Remi.Pages/fre/Arc_12/2026_02.01/CGOA_BGC_2025_07_base_nep_phy_feb26/gfdl.ncrc6-intel23-prod/pp/ocean_daily/ocean_daily.static.nc
+NEP_STATIC: /archive/Liz.Drenkard/fre/cefi/NEP/2025_07/NEP10k_202507_physics_bgc/gfdl.ncrc6-intel23-repro/pp/ocean_daily/ocean_daily.static.nc
+
+nep_restart: /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_hindcast02/restart/restdate_20120101/MOM_20120101.res.nc
+
+# regridding behavior (same as your notebook call defaults)
+tracer_method: nearest_s2d
+uv_method: nearest_s2d
+reuse_weights: True
+
+# weight filenames (same names you used)
+regrid_tracer_weights: regrid_bilin.nc
+regrid_u_weights: regrid_bilin_uu.nc
+regrid_v_weights: regrid_bilin_vv.nc
+
+variable_names:
+  temperature: Temp
+  salinity: Salt
+  sea_surface_height: ave_ssh
+  zonal_velocity: u
+  meridional_velocity: v
+
+# output IC
+OUT_IC: /work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6/tools/initial/outputs_CGOA_fcst/ic_nep_to_goa_dmitry_20120101.nc
+
+# time settings (same as your block)
+IC_DATE: "2012-01-01T00:00:00"
+TIME_REF: "2012-01-01T00:00:00"
+TIME_UNITS: "days since 2012-01-01 00:00:00"
+TIME_CAL: "gregorian"
+
+# global attribute in output
+regrid_method_attr: nearest_s2d

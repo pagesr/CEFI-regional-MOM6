@@ -30,7 +30,6 @@ def rotate_uv(uearth, vearth, angle_earth_to_model_rad):
     on how this works.
 
     Args:
-    Args:
         uearth: west-east component of velocity.
         vearth: south-north component of velocity.
         angle_earth_to_model_rad: angle of rotation from true north to model north [radians].
@@ -387,62 +386,41 @@ class Segment():
     
     def to_netcdf(self, ds, varnames, suffix=None, additional_encoding=None):
         """Write data for the segment to file.
-    
+
         Args:
             ds (xarray.Dataset): Segment dataset.
-            varnames (str): Name to give the file (e.g. 'temp', 'salt', 'uv').
+            varnames (str): Name to give the file (e.g. 'temp', 'salt'). 
             suffix (str, optional): Optional suffix to append to the filename (before .nc). Defaults to None.
-            additional_encoding (dict, optional): Extra encodings to apply (kept for backward compat).
         """
-        # ------------------------------------------------------------------
-        # NetCDF3 requirement: unlimited dim ('time') must be first dimension
-        # for ANY variable that uses it. Enforce globally to avoid
-        # "NC_UNLIMITED in the wrong index" errors.
-        # ------------------------------------------------------------------
-        if 'time' in ds.dims:
-            other_dims = [d for d in ds.dims if d != 'time']
-            ds = ds.transpose('time', *other_dims)
-    
-        # ------------------------------------------------------------------
-        # Fill values: apply to data_vars only (avoid coords/strings issues)
-        # ------------------------------------------------------------------
-        for v in ds.data_vars:
-            ds[v].encoding['_FillValue'] = 1.0e20
-    
+        for v in ds:
+            ds[v].encoding['_FillValue']= 1.0e20
         fname = f'{varnames}_{self.num:03d}_{suffix}.nc' if suffix is not None else f'{varnames}_{self.num:03d}.nc'
-    
-        # Ensure lon/lat are float64 (MOM6 expectations / precision)
-        lon_name = f'lon_{self.segstr}'
-        lat_name = f'lat_{self.segstr}'
-        if lon_name in ds.variables:
-            ds[lon_name].encoding['dtype'] = 'float64'
-        if lat_name in ds.variables:
-            ds[lat_name].encoding['dtype'] = 'float64'
-    
-        # Time encoding (only if time exists)
-        # RP CHANGE TO TIME
-        if 'time' in ds.variables:
-            ds['time'].encoding['units'] = 'hours since 1993-01-01 00:00:00'
-            ds['time'].encoding['calendar'] = 'gregorian'
-            ds['time'].encoding['dtype'] = 'float64'
-            ds['time'].encoding['_FillValue'] = 1.0e20  
-            # If time doesn't already have a calendar/modulo, ensure a safe encoding
-            if 'calendar' not in ds['time'].attrs and 'modulo' not in ds['time'].attrs:
-                ds['time'].encoding['calendar'] = 'gregorian'
-                ds['time'].encoding['dtype'] = 'float64'
-                ds['time'].encoding['_FillValue'] = 1.0e20
-    
-        # Apply any extra encoding requested by caller
-        if additional_encoding is not None:
-            for k, v in additional_encoding.items():
-                if k in ds.variables:
-                    ds[k].encoding.update(v)
-    
+        # Set format and attributes for coordinates, including time if it does not already have calendar attribute
+        # (may change this to detect whether time is a time type or a float).
+        # Need to include the fillvalue or it will be back to nan
+        # encoding = {
+        #     'time': dict(_FillValue=1.0e20),
+        #     f'lon_{self.segstr}': dict(dtype='float64', _FillValue=1.0e20),
+        #     f'lat_{self.segstr}': dict(dtype='float64', _FillValue=1.0e20)
+        # }
+        ds[f'lon_{self.segstr}'].encoding['dtype'] = 'float64'
+        ds[f'lat_{self.segstr}'].encoding['dtype'] = 'float64'
+
+        if 'calendar' not in ds['time'].attrs and 'modulo' not in ds['time'].attrs:
+            # ds['time'].attrs['calendar'] = 'gregorian'
+            # encoding.update({'time': dict(dtype='float64', _FillValue=1.0e20)})
+            ds.time.encoding['calendar']='gregorian'
+            ds.time.encoding['dtype'] = 'float64'
+            ds.time.encoding['_FillValue'] = 1.0e20
+        # if additional_encoding is not None:
+        #     encoding.update(additional_encoding)
+        
         ds.to_netcdf(
             path.join(self.output_dir, fname),
             format='NETCDF3_64BIT',
             engine='netcdf4',
-            unlimited_dims='time' if 'time' in ds.dims else None
+            # encoding=encoding,
+            unlimited_dims='time'
         )
 
     def expand_dims(self, ds):
@@ -526,42 +504,33 @@ class Segment():
         return ds
     
     def regrid_velocity(
-            self, usource, vsource,
-            method='nearest_s2d', periodic=False, write=True,
-            flood=False, fill='b', xdim='lon', ydim='lat', zdim='z', z_i_src=None, rotate=True,
-            time_attrs=None, time_encoding=None, weight_save=False , **kwargs):
+                self, usource, vsource, 
+                method='nearest_s2d', periodic=False, write=True, 
+                flood=False, fill='b', xdim='lon', ydim='lat', zdim='z', rotate=True, 
+                time_attrs=None, time_encoding=None, **kwargs):
         """Interpolate velocity onto segment and (optionally) write to file.
-    
+
         Args:
             usource (xarray.DataArray): Earth-relative u velocity on source grid.
             vsource (xarray.DataArray): Earth-relative v velocity on source grid.
-            method (str): xesmf regrid method.
-            periodic (bool): passed to xesmf.
-            write (bool): write results to file.
-            flood (bool): horizontally flood the source data first.
-            fill (str): method for fill_missing (b/bfill or f/ffill).
-            xdim, ydim, zdim (str): dim names used if flooding.
-            rotate (bool): rotate EARTH -> MODEL at the end.
-            time_attrs/time_encoding: restored onto output time.
-    
-        Kwargs:
-            z_i_src (xarray.DataArray): source interface depths (nz+1) for transport correction.
-    
+            method (str, optional): Method recognized by xesmf to use to regrid. Defaults to 'nearest_s2d'.
+            periodic (bool, optional): Whether the source grid is periodic (passed to xesmf). Defaults to False.
+            write (bool, optional): After regridding, write the results to file. Defaults to True.
+            flood (bool, optional): As the first step of regridding, horizontally flood the source data. Defaults to False.
+            fill (str, optional): Method to use for filling data horizontally (b for bfill or f for ffill).
+            xdim (str, optional): Name of the horizontal x dimension, needed if flooding. Defaults to 'lon'.
+            ydim (str, optional): Name of the horizontal y dimension, needed if flooding. Defaults to 'lat'.
+            zdim (str, optional): Name of the vertical dimension, needed if flooding. Defaults to 'z'.
+
         Returns:
-            xarray.Dataset
+            xarray.Dataset: Dataset of regridded boundary data.
         """
-    
-        # --- consume z_i_src so it doesn't go to to_netcdf ---
-        if z_i_src is None and "z_i_src" in kwargs:
-            z_i_src = kwargs.pop("z_i_src")
-        else:
-            kwargs.pop("z_i_src", None)
-    
         if flood:
             usource = flood_missing(usource, xdim=xdim, ydim=ydim, zdim=zdim).load()
             vsource = flood_missing(vsource, xdim=xdim, ydim=ydim, zdim=zdim).load()
-    
-        # Horizontally interpolate velocity to MOM boundary (LocStream out)
+
+        # Horizontally interpolate velocity to MOM boundary.
+
         uregrid = reuse_regrid(
             usource,
             self.coords,
@@ -569,7 +538,7 @@ class Segment():
             locstream_out=True,
             periodic=periodic,
             filename=path.join(self.regrid_dir, f'regrid_{self.segstr}_u.nc'),
-            reuse_weights=weight_save
+            reuse_weights=False
         )
         vregrid = reuse_regrid(
             vsource,
@@ -578,134 +547,86 @@ class Segment():
             locstream_out=True,
             periodic=periodic,
             filename=path.join(self.regrid_dir, f'regrid_{self.segstr}_v.nc'),
-            reuse_weights=weight_save
+            reuse_weights=False
         )
-    
+#        uregrid = xesmf.Regridder(
+#            usource,
+#            self.coords,
+#            method=method,
+#            locstream_out=True,
+#            periodic=periodic,
+#            filename=path.join(self.regrid_dir, f'regrid_{self.segstr}_u.nc'),
+#            reuse_weights=False
+#        )
+#        vregrid = xesmf.Regridder(
+#            vsource,
+#            self.coords,
+#            method=method,
+#            locstream_out=True,
+#            periodic=periodic,
+#            filename=path.join(self.regrid_dir, f'regrid_{self.segstr}_v.nc'),
+#            reuse_weights=False
+#        )
         udest = uregrid(usource)
         vdest = vregrid(vsource)
-    
-        # If lat/lon are variables in source, xESMF may return a Dataset
+
+        # if lat and lon are variables in u/vsource, u/vdest will be dataset
         if isinstance(udest, xarray.Dataset):
             udest = udest.to_array().squeeze()
         if isinstance(vdest, xarray.Dataset):
             vdest = vdest.to_array().squeeze()
-    
-        # --- ALWAYS rename horizontal dim to 'locations' and build matching angle on 'locations'
-        if self.border in ['south', 'north']:
-            udest = udest.rename({'nxp': 'locations'})
-            vdest = vdest.rename({'nxp': 'locations'})
-            angle = self.coords['angle'].rename({'nxp': 'locations'})
-        elif self.border in ['west', 'east']:
-            udest = udest.rename({'nyp': 'locations'})
-            vdest = vdest.rename({'nyp': 'locations'})
-            angle = self.coords['angle'].rename({'nyp': 'locations'})
-        else:
-            raise ValueError(f"Unknown border: {self.border}")
-    
-        # ------------------------------------------------------------------
-        # Build dataset in EARTH frame first (udest=uE, vdest=vN)
-        # Apply transport-preserving correction (earth-frame), THEN rotate.
-        # ------------------------------------------------------------------
+
+        # Rotate velocities to be model-relative.
+        if rotate:
+            if self.border in ['south', 'north']:
+                udest = udest.rename({'nxp': 'locations'})
+                vdest = vdest.rename({'nxp': 'locations'})
+                angle = self.coords['angle'].rename({'nxp': 'locations'})
+            elif self.border in ['west', 'east']:
+                udest = udest.rename({'nyp': 'locations'})
+                vdest = vdest.rename({'nyp': 'locations'})
+                angle = self.coords['angle'].rename({'nyp': 'locations'})
+            udest, vdest = rotate_uv(udest, vdest, angle)
+
         ds_uv = xarray.Dataset({
             f'u_{self.segstr}': udest,
             f'v_{self.segstr}': vdest
         })
-    
+
         ds_uv = fill_missing(ds_uv, fill=fill)
-    
-        # time must be unlimited dim
+
+        # Need to transpose so that time is first,
+        # so that it can be the unlimited dimension
         ds_uv = ds_uv.transpose('time', 'z', 'locations')
-    
-        # Add thickness (whatever your z_to_dz implements)
+
+        # Add thickness
         dz = z_to_dz(ds_uv)
         ds_uv[f'dz_u_{self.segstr}'] = dz
         ds_uv[f'dz_v_{self.segstr}'] = dz
-    
-        # ------------------------------------------------------------
-        # Transport-preserving correction in EARTH frame
-        # ------------------------------------------------------------
-        z_i_src = kwargs.get("z_i_src", None)
-        if z_i_src is not None:
-            zdim_src = usource.dims[1]  # should be 'z_l'
-        
-            dz_src = xr.DataArray(
-                np.diff(z_i_src.values).astype(np.float64),
-                dims=(zdim_src,),
-                coords={zdim_src: usource[zdim_src].values}
-            )
-        
-            TE_src_native = (usource * dz_src).sum(dim=zdim_src, skipna=True)
-            TN_src_native = (vsource * dz_src).sum(dim=zdim_src, skipna=True)
-    
-            # Regrid transports to the same target locations (reuse SAME weights)
-            TE_src_loc = uregrid(TE_src_native)
-            TN_src_loc = vregrid(TN_src_native)
-    
-            # If regrid returns Dataset, reduce to DataArray
-            if isinstance(TE_src_loc, xarray.Dataset):
-                TE_src_loc = TE_src_loc.to_array().squeeze()
-            if isinstance(TN_src_loc, xarray.Dataset):
-                TN_src_loc = TN_src_loc.to_array().squeeze()
-    
-            # Rename to 'locations'
-            if 'nxp' in TE_src_loc.dims:
-                TE_src_loc = TE_src_loc.rename({'nxp': 'locations'})
-            if 'nyp' in TE_src_loc.dims:
-                TE_src_loc = TE_src_loc.rename({'nyp': 'locations'})
-            if 'nxp' in TN_src_loc.dims:
-                TN_src_loc = TN_src_loc.rename({'nxp': 'locations'})
-            if 'nyp' in TN_src_loc.dims:
-                TN_src_loc = TN_src_loc.rename({'nyp': 'locations'})
-    
-            ukey = f'u_{self.segstr}'
-            vkey = f'v_{self.segstr}'
-    
-            # Target transports from current EARTH-frame u/v and dz
-            TE_tgt = (ds_uv[ukey] * dz).sum(dim='z', skipna=True)
-            TN_tgt = (ds_uv[vkey] * dz).sum(dim='z', skipna=True)
-    
-            EPS = 1e-12
-            sE = TE_src_loc / (TE_tgt + EPS)
-            sN = TN_src_loc / (TN_tgt + EPS)
-    
-            # Clean + clamp scaling
-            sE = sE.where(np.isfinite(sE), 1.0).clip(0.2, 5.0)
-            sN = sN.where(np.isfinite(sN), 1.0).clip(0.2, 5.0)
-    
-            # Broadcast automatically over z
-            ds_uv[ukey] = ds_uv[ukey] * sE
-            ds_uv[vkey] = ds_uv[vkey] * sN
-    
-        # ------------------------------------------------------------------
-        # Rotate corrected EARTH-frame velocities to MODEL-relative if requested
-        # ------------------------------------------------------------------
-        if rotate:
-            ukey = f'u_{self.segstr}'
-            vkey = f'v_{self.segstr}'
-            urot, vrot = rotate_uv(ds_uv[ukey], ds_uv[vkey], angle)
-            ds_uv[ukey] = urot
-            ds_uv[vkey] = vrot
-    
-        # Existing bookkeeping below (unchanged)
+
         ds_uv['z'] = np.arange(len(ds_uv['z']))
+
         ds_uv = self.expand_dims(ds_uv)
-    
+
+        # Check if 'lon' is not present, then add it
         if 'lon' not in ds_uv.variables:
             ds_uv = ds_uv.update({'lon': ('locations', self.coords['lon'].values)})
+
+        # Check if 'lat' is not present, then add it
         if 'lat' not in ds_uv.variables:
             ds_uv = ds_uv.update({'lat': ('locations', self.coords['lat'].values)})
-    
+
         ds_uv = self.rename_dims(ds_uv)
-    
+
         # Restore time attributes and encoding
         if time_attrs:
             ds_uv['time'].attrs = time_attrs
         if time_encoding:
             ds_uv['time'].encoding = time_encoding
-    
+
         if write:
             self.to_netcdf(ds_uv, 'uv', **kwargs)
-    
+        
         return ds_uv
 
     def regrid_tracer(
@@ -713,7 +634,7 @@ class Segment():
             method='nearest_s2d', periodic=False, write=True, 
             flood=False, fill='b', xdim='lon', ydim='lat', zdim='z',
             regrid_suffix='t', source_var=None, 
-            time_attrs=None, time_encoding=None, weight_save=False, **kwargs):
+            time_attrs=None, time_encoding=None, **kwargs):
         """Regrid a tracer onto segment and (optionally) write to file.
 
         Args:
@@ -750,7 +671,7 @@ class Segment():
             locstream_out=True,
             periodic=periodic,
             filename=path.join(self.regrid_dir, f'regrid_{self.segstr}_{regrid_suffix}.nc'),
-            reuse_weights=weight_save
+            reuse_weights=False
         )
         tdest = regrid(tsource)
 

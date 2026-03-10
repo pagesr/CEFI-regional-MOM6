@@ -1,0 +1,16 @@
+#example YAML configuration file
+glorys_file: /work/Remi.Pages/CEFI-regional-MOM6/tools/initial/NEP_10k/nep_10km_init_1993-01-01_glorys.nc\
+nep_grid_file: /work/Remi.Pages/CEFI-regional-MOM6/tools/initial/NEP_10k/NEP_ocean_static_nomask.nc
+vgrid_file: /work/Remi.Pages/GRID/vgrid_75_2m.nc
+grid_file: /work/Remi.Pages/GOA2p5k/GRID/CGOA_2.5k/ocean_hgrid.nc
+grid_file_nep: /work/Remi.Pages/CEFI-regional-MOM6/tools/initial/NEP_10k/ocean_hgrid.nc
+static_nep: /work/Remi.Pages/CEFI-regional-MOM6/tools/initial/NEP_10k/NEP_ocean_static_nomask.nc
+output_file: /work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6/tools/initial/outputs_CGOA/nep_10k_ic_phy_liz.nc 
+reuse_weights: False
+
+variable_names:
+  temperature: temp
+  salinity: salt
+  sea_surface_height: ssh
+  zonal_velocity: u
+  meridional_velocity: v

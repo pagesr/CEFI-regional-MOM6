@@ -1,0 +1,43 @@
+#####################################################################
+JobID 52841643 - begin Tue Feb 24 21:28:13 EST 2026
+---------------------------------------------------------------------
+Job Name: run_south.slurm
+User: Remi.Pages
+Host: pp039
+Scratch TMPDIR: /vftmp/Remi.Pages/job52841643
+Submit host: an005
+#####################################################################
+Loading gcp/2.3
+  Loading requirement: globus/system perlbrew/5.38.2
+Loading cdo/2.4.4
+  Loading requirement: mpich/4.2.3 zlib-ng/2.2.1 hdf5/1.14.5
+    intel-oneapi-mkl/2024.2.2 netcdf-c/4.9.2 proj/9.4.1 udunits/2.2.28
+Loading nco/5.2.4
+  Loading requirement: gsl/2.8
+1994
+south zos
+south uv
+south thetao
+south so
+#####################################################################
+Job Name: run_south.slurm
+User: Remi.Pages
+Host: pp039
+Removed TMPDIR: /vftmp/Remi.Pages/job52841643
+Submit host: an005
+---------------------------------------------------------------------
+JobID 52841643 - end Tue Feb 24 21:29:11 EST 2026
+#####################################################################
+Account              cefi
+Partition            batch
+Constraints          -
+NCPUS                1
+Timelimit            1-00:00:00
+Elapsed              00:00:59
+UserCPU              00:00:12
+SystemCPU            00:00:03
+NodeMem              45.9G
+MaxRSS               2.0G
+ExitCode             0:0
+State                COMPLETED
+Comment              -

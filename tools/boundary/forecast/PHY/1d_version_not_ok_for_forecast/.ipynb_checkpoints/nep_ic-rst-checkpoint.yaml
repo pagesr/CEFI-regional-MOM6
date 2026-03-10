@@ -1,0 +1,12 @@
+
+
+# Commeted for Dmitry of from res 
+variable_names:
+  temperature: thetao #Temp
+  salinity: so #Salt
+  sea_surface_height: zos #sfc
+  zonal_velocity: uo #u
+  meridional_velocity: vo #v
+
+flood: true            # or false
+apply_wet_masks: true  # or false

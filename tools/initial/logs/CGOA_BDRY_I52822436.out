@@ -1,0 +1,710 @@
+#####################################################################
+JobID 52822436 - begin Mon Feb 23 20:27:56 EST 2026
+---------------------------------------------------------------------
+Job Name: nep2goa_bgc_ic
+User: Remi.Pages
+Host: pp042
+Scratch TMPDIR: /vftmp/Remi.Pages/job52822436
+Submit host: an202
+#####################################################################
+Loading nco/5.2.4
+  Loading requirement: gsl/2.8 mpich/4.2.3 zlib-ng/2.2.1 hdf5/1.14.5
+    netcdf-c/4.9.2 udunits/2.2.28
+==================================================
+Host: pp042
+PWD : /work5/rnp/IC-BC-GOA/CEFI-regional-MOM6/tools/initial
+Date: Mon Feb 23 20:27:59 EST 2026
+Python: /nbhome/role.medgrp/.conda/envs/medpy311/bin/python
+Python 3.11.10
+SCRIPT: /work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6/tools/initial/nep_to_goa_bgc_ic.py
+YAML  : /work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6/tools/initial/nep_to_goa_bgc_ic.yaml
+==================================================
+---- YAML head ----
+# nep_to_goa_bgc_ic.yaml
+
+debug: true
+
+GOA_STATIC: "/archive/Remi.Pages/fre/Arc_12/2026_02.01/CGOA_BGC_2025_07_base_nep_phy_feb26/gfdl.ncrc6-intel23-prod/pp/ocean_daily/ocean_daily.static.nc"
+NEP_STATIC: "/archive/Liz.Drenkard/fre/cefi/NEP/2025_07/NEP10k_202507_physics_bgc/gfdl.ncrc6-intel23-repro/pp/ocean_daily/ocean_daily.static.nc"
+NEP_RESTART_DIR: "/archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101"
+
+reuse_weights: true
+regrid_tracer_weights: "regrid_bilin_bgc.nc"
+tracer_method: "nearest_s2d"
+
+OUT_IC: "/work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6/tools/initial/outputs_CGOA/ic_nep_to_goa_bgc_dmitry.nc"
+IC_DATE: "1993-01-01T00:00:00"
+TIME_REF: "1993-01-01T00:00:00"
+TIME_UNITS: "days since 1993-01-01 00:00:00"
+TIME_CAL: "proleptic_gregorian"
+
+missing_to_zero:
+  - di14c
+  - dic14
+  - do14
+  - do14c
+  - irr_mem_dp
+  - nh3
+
+BGC_VARS:
+  - no3
+  - o2
+  - po4
+  - sio4
+  - dic
+  - alk
+  - cadet_arag
+  - cadet_calc
+  - fed
+  - fedi
+  - felg
+  - fedet
+  - fesm
+  - ldon
+  - ldop
+  - lith
+  - lithdet
+  - nbact
+  - ndet
+  - ndi
+  - nlg
+  - nsm
+  - nh4
+  - pdet
+  - srdon
+  - srdop
+  - sldon
+  - sldop
+  - sidet
+  - silg
+  - nsmz
+  - nmdz
+  - nlgz
+-------------------
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable no3 as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable o2 as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable po4 as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable sio4 as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable dic as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable alk as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable cadet_arag as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable cadet_calc as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable fed as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable fedi as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable felg as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable fedet as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable fesm as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable ldon as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable ldop as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable lith as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable lithdet as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable nbact as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable ndet as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable ndi as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable nlg as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable nsm as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable nh4 as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable pdet as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable srdon as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable srdop as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable sldon as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable sldop as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable sidet as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable silg as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable nsmz as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable nmdz as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable nlgz as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable simd as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable femd as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable nmd as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable psm as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable pmd as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable plg as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable pdi as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable mu_mem_nsm as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable mu_mem_nlg as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable mu_mem_ndi as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable irr_aclm as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable fedet_btf as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable sidet_btf as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable pdet_btf as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable ndet_btf as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable lithdet_btf as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable cadet_calc_btf as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable cadet_arag_btf as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable co3_ion as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable cased as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable chl as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable nsm_btf as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable nmd_btf as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable nlg_btf as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable ndi_btf as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable fesm_btf as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable femd_btf as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable felg_btf as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable fedi_btf as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable simd_btf as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable silg_btf as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable pdi_btf as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable plg_btf as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable pmd_btf as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable psm_btf as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable irr_aclm_sfc as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable irr_aclm_z as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable mu_mem_nmd as the horizontal dimensions for the regridding.
+  warnings.warn(
+/nbhome/role.medgrp/.conda/envs/medpy311/lib/python3.11/site-packages/xesmf/frontend.py:718: UserWarning: Using dimensions ('lath', 'lonh') from data variable htotal as the horizontal dimensions for the regridding.
+  warnings.warn(
+/work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6/tools/initial/nep_to_goa_bgc_ic.py:274: FutureWarning: The return type of `Dataset.dims` will be changed to return a set of dimension names in future, in order to be more consistent with `DataArray.dims`. To access a mapping from dimension names to lengths, please use `Dataset.sizes`.
+  print("nvars:", len(ic.data_vars), "dims:", dict(ic.dims))
+--------------------------------------------------
+DEBUG=True
+NEP restart dir: /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101
+Known missing_to_zero (won't scan, will fill with 0): 6
+['di14c', 'dic14', 'do14', 'do14c', 'irr_mem_dp', 'nh3']
+Will scan for variables: 72 / 78
+Found 11 restart files:
+   /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+   /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+   /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+   /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+   /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_4.nc
+   /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_5.nc
+   /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_6.nc
+   /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_7.nc
+   /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/ice_cobalt_19960101.res.nc
+   /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/ice_model_19960101.res.nc
+   /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/ocean_cobalt_airsea_flux_19960101.res.nc
+--------------------------------------------------
+Scanning file: /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc | remaining vars: 72
+  hits: ['htotal', 'irr_aclm', 'irr_aclm_sfc', 'irr_aclm_z', 'mu_mem_ndi', 'mu_mem_nlg', 'mu_mem_nmd', 'mu_mem_nsm', 'silg_btf', 'simd_btf']
+  Found variable irr_aclm_sfc in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  Found variable mu_mem_ndi in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  Found variable htotal in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  Found variable mu_mem_nmd in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  Found variable irr_aclm in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  Found variable mu_mem_nlg in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  Found variable simd_btf in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  Found variable irr_aclm_z in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  Found variable silg_btf in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  Found variable mu_mem_nsm in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+Scanning file: /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc | remaining vars: 62
+  hits: ['cadet_arag_btf', 'cadet_calc_btf', 'cased', 'chl', 'co3_ion', 'fedet_btf', 'fedi_btf', 'felg_btf', 'femd_btf', 'fesm_btf', 'lithdet_btf', 'ndet_btf', 'ndi_btf', 'nlg_btf', 'nlgz', 'nmd_btf', 'nsm_btf', 'pdet_btf', 'pdi_btf', 'plg_btf', 'pmd_btf', 'psm_btf', 'sidet_btf']
+  Found variable ndi_btf in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable pmd_btf in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable femd_btf in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable pdet_btf in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable sidet_btf in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable co3_ion in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable fedet_btf in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable nlg_btf in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable pdi_btf in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable felg_btf in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable cadet_calc_btf in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable lithdet_btf in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable nmd_btf in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable nlgz in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable plg_btf in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable chl in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable fedi_btf in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable cadet_arag_btf in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable cased in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable nsm_btf in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable ndet_btf in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable psm_btf in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Found variable fesm_btf in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+Scanning file: /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc | remaining vars: 39
+  hits: ['lith', 'lithdet', 'nbact', 'ndet', 'ndi', 'nh4', 'nlg', 'nmd', 'nmdz', 'no3', 'nsm', 'nsmz', 'o2', 'pdet', 'po4', 'sidet', 'silg', 'simd', 'sio4', 'sldon', 'sldop', 'srdon', 'srdop']
+  Found variable nbact in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable ndi in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable no3 in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable srdon in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable sidet in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable silg in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable sldon in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable nlg in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable simd in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable nmdz in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable sio4 in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable nh4 in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable nmd in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable sldop in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable pdet in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable po4 in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable nsmz in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable ndet in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable srdop in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable lithdet in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable nsm in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable lith in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Found variable o2 in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+Scanning file: /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc | remaining vars: 16
+  hits: ['alk', 'cadet_arag', 'cadet_calc', 'dic', 'fed', 'fedet', 'fedi', 'felg', 'femd', 'fesm', 'ldon', 'ldop', 'pdi', 'plg', 'pmd', 'psm']
+  Found variable femd in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Found variable pmd in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Found variable psm in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Found variable felg in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Found variable ldon in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Found variable cadet_arag in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Found variable dic in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Found variable cadet_calc in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Found variable fedet in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Found variable fedi in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Found variable pdi in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Found variable ldop in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Found variable fesm in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Found variable plg in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Found variable alk in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Found variable fed in /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+All required variables found (excluding missing_to_zero). Stop scanning.
+--------------------------------------------------
+NEP restart dir: /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101
+Found variables (excluding missing_to_zero): 72 / 72
+Known missing_to_zero: 6
+Still missing (NOT in missing_to_zero): 0
+--------------------------------------------------
+Variable -> file mapping (found):
+  no3                      -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  o2                       -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  po4                      -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  sio4                     -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  dic                      -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  alk                      -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  cadet_arag               -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  cadet_calc               -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  fed                      -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  fedi                     -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  felg                     -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  fedet                    -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  fesm                     -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  ldon                     -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  ldop                     -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  lith                     -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  lithdet                  -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  nbact                    -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  ndet                     -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  ndi                      -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  nlg                      -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  nsm                      -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  nh4                      -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  pdet                     -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  srdon                    -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  srdop                    -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  sldon                    -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  sldop                    -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  sidet                    -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  silg                     -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  nsmz                     -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  nmdz                     -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  nlgz                     -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  simd                     -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  femd                     -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  nmd                      -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  psm                      -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  pmd                      -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  plg                      -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  pdi                      -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  di14c                    -> (missing -> will set to 0)
+  dic14                    -> (missing -> will set to 0)
+  do14                     -> (missing -> will set to 0)
+  do14c                    -> (missing -> will set to 0)
+  nh3                      -> (missing -> will set to 0)
+  mu_mem_nsm               -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  mu_mem_nlg               -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  mu_mem_ndi               -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  irr_aclm                 -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  fedet_btf                -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  sidet_btf                -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  pdet_btf                 -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  ndet_btf                 -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  lithdet_btf              -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  cadet_calc_btf           -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  cadet_arag_btf           -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  co3_ion                  -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  cased                    -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  chl                      -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  nsm_btf                  -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  nmd_btf                  -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  nlg_btf                  -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  ndi_btf                  -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  fesm_btf                 -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  femd_btf                 -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  felg_btf                 -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  fedi_btf                 -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  simd_btf                 -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  silg_btf                 -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  pdi_btf                  -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  plg_btf                  -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  pmd_btf                  -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  psm_btf                  -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  irr_mem_dp               -> (missing -> will set to 0)
+  irr_aclm_sfc             -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  irr_aclm_z               -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  mu_mem_nmd               -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  htotal                   -> /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+--------------------------------------------------
+[1/78] Regridding variable: no3 from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done no3, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[2/78] Regridding variable: o2 from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done o2, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[3/78] Regridding variable: po4 from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done po4, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[4/78] Regridding variable: sio4 from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done sio4, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[5/78] Regridding variable: dic from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Done dic, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[6/78] Regridding variable: alk from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Done alk, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[7/78] Regridding variable: cadet_arag from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Done cadet_arag, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[8/78] Regridding variable: cadet_calc from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Done cadet_calc, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[9/78] Regridding variable: fed from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Done fed, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[10/78] Regridding variable: fedi from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Done fedi, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[11/78] Regridding variable: felg from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Done felg, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[12/78] Regridding variable: fedet from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Done fedet, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[13/78] Regridding variable: fesm from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Done fesm, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[14/78] Regridding variable: ldon from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Done ldon, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[15/78] Regridding variable: ldop from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Done ldop, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[16/78] Regridding variable: lith from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done lith, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[17/78] Regridding variable: lithdet from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done lithdet, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[18/78] Regridding variable: nbact from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done nbact, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[19/78] Regridding variable: ndet from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done ndet, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[20/78] Regridding variable: ndi from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done ndi, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[21/78] Regridding variable: nlg from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done nlg, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[22/78] Regridding variable: nsm from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done nsm, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[23/78] Regridding variable: nh4 from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done nh4, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[24/78] Regridding variable: pdet from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done pdet, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[25/78] Regridding variable: srdon from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done srdon, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[26/78] Regridding variable: srdop from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done srdop, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[27/78] Regridding variable: sldon from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done sldon, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[28/78] Regridding variable: sldop from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done sldop, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[29/78] Regridding variable: sidet from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done sidet, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[30/78] Regridding variable: silg from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done silg, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[31/78] Regridding variable: nsmz from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done nsmz, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[32/78] Regridding variable: nmdz from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done nmdz, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[33/78] Regridding variable: nlgz from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done nlgz, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[34/78] Regridding variable: simd from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done simd, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[35/78] Regridding variable: femd from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Done femd, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[36/78] Regridding variable: nmd from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_2.nc
+  Done nmd, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[37/78] Regridding variable: psm from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Done psm, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[38/78] Regridding variable: pmd from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Done pmd, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[39/78] Regridding variable: plg from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Done plg, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[40/78] Regridding variable: pdi from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_3.nc
+  Done pdi, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[41/78] Variable di14c missing -> will fill with zeros later
+[42/78] Variable dic14 missing -> will fill with zeros later
+[43/78] Variable do14 missing -> will fill with zeros later
+[44/78] Variable do14c missing -> will fill with zeros later
+[45/78] Variable nh3 missing -> will fill with zeros later
+[46/78] Regridding variable: mu_mem_nsm from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  Done mu_mem_nsm, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[47/78] Regridding variable: mu_mem_nlg from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  Done mu_mem_nlg, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[48/78] Regridding variable: mu_mem_ndi from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  Done mu_mem_ndi, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[49/78] Regridding variable: irr_aclm from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  Done irr_aclm, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[50/78] Regridding variable: fedet_btf from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done fedet_btf, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[51/78] Regridding variable: sidet_btf from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done sidet_btf, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[52/78] Regridding variable: pdet_btf from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done pdet_btf, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[53/78] Regridding variable: ndet_btf from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done ndet_btf, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[54/78] Regridding variable: lithdet_btf from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done lithdet_btf, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[55/78] Regridding variable: cadet_calc_btf from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done cadet_calc_btf, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[56/78] Regridding variable: cadet_arag_btf from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done cadet_arag_btf, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[57/78] Regridding variable: co3_ion from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done co3_ion, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[58/78] Regridding variable: cased from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done cased, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[59/78] Regridding variable: chl from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done chl, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[60/78] Regridding variable: nsm_btf from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done nsm_btf, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[61/78] Regridding variable: nmd_btf from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done nmd_btf, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[62/78] Regridding variable: nlg_btf from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done nlg_btf, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[63/78] Regridding variable: ndi_btf from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done ndi_btf, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[64/78] Regridding variable: fesm_btf from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done fesm_btf, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[65/78] Regridding variable: femd_btf from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done femd_btf, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[66/78] Regridding variable: felg_btf from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done felg_btf, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[67/78] Regridding variable: fedi_btf from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done fedi_btf, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[68/78] Regridding variable: simd_btf from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  Done simd_btf, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[69/78] Regridding variable: silg_btf from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  Done silg_btf, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[70/78] Regridding variable: pdi_btf from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done pdi_btf, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[71/78] Regridding variable: plg_btf from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done plg_btf, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[72/78] Regridding variable: pmd_btf from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done pmd_btf, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[73/78] Regridding variable: psm_btf from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res_1.nc
+  Done psm_btf, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[74/78] Variable irr_mem_dp missing -> will fill with zeros later
+[75/78] Regridding variable: irr_aclm_sfc from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  Done irr_aclm_sfc, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[76/78] Regridding variable: irr_aclm_z from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  Done irr_aclm_z, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[77/78] Regridding variable: mu_mem_nmd from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  Done mu_mem_nmd, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+[78/78] Regridding variable: htotal from file /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_spinup/restart/restdate_19960101/MOM_19960101.res.nc
+  Done htotal, result dims=('Time', 'Layer', 'jh', 'ih'), shape=(1, 75, 528, 480)
+Filling missing variable with zeros: di14c
+Filling missing variable with zeros: dic14
+Filling missing variable with zeros: do14
+Filling missing variable with zeros: do14c
+Filling missing variable with zeros: nh3
+Filling missing variable with zeros: irr_mem_dp
+--------------------------------------------------
+About to write IC file: /work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6/tools/initial/outputs_CGOA/ic_nep_to_goa_bgc_dmitry.nc
+Variables in output:
+  no3                      shape=(1, 75, 528, 480)
+  o2                       shape=(1, 75, 528, 480)
+  po4                      shape=(1, 75, 528, 480)
+  sio4                     shape=(1, 75, 528, 480)
+  dic                      shape=(1, 75, 528, 480)
+  alk                      shape=(1, 75, 528, 480)
+  cadet_arag               shape=(1, 75, 528, 480)
+  cadet_calc               shape=(1, 75, 528, 480)
+  fed                      shape=(1, 75, 528, 480)
+  fedi                     shape=(1, 75, 528, 480)
+  felg                     shape=(1, 75, 528, 480)
+  fedet                    shape=(1, 75, 528, 480)
+  fesm                     shape=(1, 75, 528, 480)
+  ldon                     shape=(1, 75, 528, 480)
+  ldop                     shape=(1, 75, 528, 480)
+  lith                     shape=(1, 75, 528, 480)
+  lithdet                  shape=(1, 75, 528, 480)
+  nbact                    shape=(1, 75, 528, 480)
+  ndet                     shape=(1, 75, 528, 480)
+  ndi                      shape=(1, 75, 528, 480)
+  nlg                      shape=(1, 75, 528, 480)
+  nsm                      shape=(1, 75, 528, 480)
+  nh4                      shape=(1, 75, 528, 480)
+  pdet                     shape=(1, 75, 528, 480)
+  srdon                    shape=(1, 75, 528, 480)
+  srdop                    shape=(1, 75, 528, 480)
+  sldon                    shape=(1, 75, 528, 480)
+  sldop                    shape=(1, 75, 528, 480)
+  sidet                    shape=(1, 75, 528, 480)
+  silg                     shape=(1, 75, 528, 480)
+  nsmz                     shape=(1, 75, 528, 480)
+  nmdz                     shape=(1, 75, 528, 480)
+  nlgz                     shape=(1, 75, 528, 480)
+  simd                     shape=(1, 75, 528, 480)
+  femd                     shape=(1, 75, 528, 480)
+  nmd                      shape=(1, 75, 528, 480)
+  psm                      shape=(1, 75, 528, 480)
+  pmd                      shape=(1, 75, 528, 480)
+  plg                      shape=(1, 75, 528, 480)
+  pdi                      shape=(1, 75, 528, 480)
+  di14c                    shape=(1, 75, 528, 480)
+  dic14                    shape=(1, 75, 528, 480)
+  do14                     shape=(1, 75, 528, 480)
+  do14c                    shape=(1, 75, 528, 480)
+  nh3                      shape=(1, 75, 528, 480)
+  mu_mem_nsm               shape=(1, 75, 528, 480)
+  mu_mem_nlg               shape=(1, 75, 528, 480)
+  mu_mem_ndi               shape=(1, 75, 528, 480)
+  irr_aclm                 shape=(1, 75, 528, 480)
+  fedet_btf                shape=(1, 75, 528, 480)
+  sidet_btf                shape=(1, 75, 528, 480)
+  pdet_btf                 shape=(1, 75, 528, 480)
+  ndet_btf                 shape=(1, 75, 528, 480)
+  lithdet_btf              shape=(1, 75, 528, 480)
+  cadet_calc_btf           shape=(1, 75, 528, 480)
+  cadet_arag_btf           shape=(1, 75, 528, 480)
+  co3_ion                  shape=(1, 75, 528, 480)
+  cased                    shape=(1, 75, 528, 480)
+  chl                      shape=(1, 75, 528, 480)
+  nsm_btf                  shape=(1, 75, 528, 480)
+  nmd_btf                  shape=(1, 75, 528, 480)
+  nlg_btf                  shape=(1, 75, 528, 480)
+  ndi_btf                  shape=(1, 75, 528, 480)
+  fesm_btf                 shape=(1, 75, 528, 480)
+  femd_btf                 shape=(1, 75, 528, 480)
+  felg_btf                 shape=(1, 75, 528, 480)
+  fedi_btf                 shape=(1, 75, 528, 480)
+  simd_btf                 shape=(1, 75, 528, 480)
+  silg_btf                 shape=(1, 75, 528, 480)
+  pdi_btf                  shape=(1, 75, 528, 480)
+  plg_btf                  shape=(1, 75, 528, 480)
+  pmd_btf                  shape=(1, 75, 528, 480)
+  psm_btf                  shape=(1, 75, 528, 480)
+  irr_mem_dp               shape=(1, 75, 528, 480)
+  irr_aclm_sfc             shape=(1, 75, 528, 480)
+  irr_aclm_z               shape=(1, 75, 528, 480)
+  mu_mem_nmd               shape=(1, 75, 528, 480)
+  htotal                   shape=(1, 75, 528, 480)
+--------------------------------------------------
+--------------------------------------------------
+Writing: /work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6/tools/initial/outputs_CGOA/ic_nep_to_goa_bgc_dmitry.nc
+nvars: 78 dims: {'zl': 75, 'xh': 480, 'yh': 528, 'time': 1}
+start write: Mon Feb 23 20:29:45 2026
+--------------------------------------------------
+--------------------------------------------------
+Done write: Mon Feb 23 21:00:06 2026 elapsed: 1821.6s
+--------------------------------------------------
+Wrote: /work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6/tools/initial/outputs_CGOA/ic_nep_to_goa_bgc_dmitry.nc
+<xarray.Dataset> Size: 12GB
+Dimensions:         (zl: 75, xh: 480, yh: 528, time: 1)
+Coordinates:
+  * zl              (zl) float64 600B 1.0 3.0 5.0 ... 6.125e+03 6.375e+03
+  * xh              (xh) float64 4kB 0.5 1.5 2.5 3.5 ... 476.5 477.5 478.5 479.5
+  * yh              (yh) float64 4kB 0.5 1.5 2.5 3.5 ... 524.5 525.5 526.5 527.5
+  * time            (time) float64 8B 0.0
+Data variables: (12/78)
+    no3             (time, zl, yh, xh) float64 152MB 1.032e-05 ... 1.871e-05
+    o2              (time, zl, yh, xh) float64 152MB 0.0002844 ... 0.0002474
+    po4             (time, zl, yh, xh) float64 152MB 1.078e-06 ... 1.905e-06
+    sio4            (time, zl, yh, xh) float64 152MB 2.391e-05 ... 3.279e-05
+    dic             (time, zl, yh, xh) float64 152MB 0.002021 ... 0.001476
+    alk             (time, zl, yh, xh) float64 152MB 0.002196 ... 0.001722
+    ...              ...
+    psm_btf         (time, zl, yh, xh) float64 152MB 0.0 0.0 0.0 ... 0.0 0.0 0.0
+    irr_mem_dp      (time, zl, yh, xh) float64 152MB 0.0 0.0 0.0 ... 0.0 0.0 0.0
+    irr_aclm_sfc    (time, zl, yh, xh) float64 152MB 46.41 46.41 ... 1e-10 1e-10
+    irr_aclm_z      (time, zl, yh, xh) float64 152MB 40.25 40.25 ... 0.0 0.0
+    mu_mem_nmd      (time, zl, yh, xh) float64 152MB 1.973e-06 ... 1e-10
+    htotal          (time, zl, yh, xh) float64 152MB 8.117e-09 ... 1e-08
+Attributes:
+    regrid_method:  nearest_s2d
+==================================================
+Done: Mon Feb 23 21:00:36 EST 2026
+==================================================
+#####################################################################
+Job Name: nep2goa_bgc_ic
+User: Remi.Pages
+Host: pp042
+Removed TMPDIR: /vftmp/Remi.Pages/job52822436
+Submit host: an202
+---------------------------------------------------------------------
+JobID 52822436 - end Mon Feb 23 21:00:36 EST 2026
+#####################################################################
+Account              cefi
+Partition            batch
+Constraints          -
+NCPUS                1
+Timelimit            1-00:00:00
+Elapsed              00:32:42
+UserCPU              00:04:47
+SystemCPU            00:14:03
+NodeMem              45.9G
+MaxRSS               23.4G
+ExitCode             0:0
+State                COMPLETED
+Comment              -
