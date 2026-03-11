@@ -35,11 +35,9 @@ def _render(obj: Any, values: dict[str, Any]) -> Any:
 
 
 def render_template(template_path: Path, values: dict[str, Any]) -> dict[str, Any]:
-    # Render placeholders in the raw template text first, then parse YAML.
-    # This preserves scalar types (e.g., int for first_year/last_year) when
-    # templates use unquoted placeholders.
-    rendered_text = template_path.read_text(encoding="utf-8").format(**values)
-    return yaml.safe_load(rendered_text)
+    with template_path.open("r", encoding="utf-8") as stream:
+        raw = yaml.safe_load(stream)
+    return _render(raw, values)
 
 
 def generate_case_configs(
