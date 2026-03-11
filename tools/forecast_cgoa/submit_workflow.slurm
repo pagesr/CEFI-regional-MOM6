@@ -8,11 +8,17 @@
 #SBATCH --output=logs/slurm_%j.out
 #SBATCH --error=logs/slurm_%j.err
 
-set -euo pipefail
+set -eo pipefail
 
 module load miniforge
 module load nco
+
+# Some site activate hooks (e.g., magics-activate.sh) reference MAGPLUS_HOME and
+# fail under nounset if it is undefined. Keep activation robust.
+export MAGPLUS_HOME="${MAGPLUS_HOME:-}"
+set +u
 conda activate /nbhome/role.medgrp/.conda/envs/medpy311
+set -u
 
 WORKFLOW_DIR=/work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6/tools/forecast_cgoa
 cd "${WORKFLOW_DIR}"

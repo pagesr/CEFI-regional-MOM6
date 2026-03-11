@@ -81,3 +81,10 @@ Update static paths and defaults in:
 - `generate_configs.py` (`DEFAULTS` dictionary)
 - `config_templates/*.yaml`
 - `submit_workflow.slurm` (partition, env, runtime)
+
+## Troubleshooting
+
+If you see an activation error like:
+`magics-activate.sh: line 3: MAGPLUS_HOME: unbound variable`
+it comes from a site Conda activation hook when shell nounset (`set -u`) is active and `MAGPLUS_HOME` is undefined.
+The provided `submit_workflow.slurm` already guards against this by initializing `MAGPLUS_HOME` and temporarily disabling nounset during `conda activate`.
