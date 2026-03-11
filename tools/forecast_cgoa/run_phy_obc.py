@@ -18,7 +18,7 @@ def run_phy_obc(config: Path, year: str, month: str, ensemble: str, output_root:
         return
 
     run_command(
-        ["python", str(PHY_OBC_SCRIPT), "--config", str(config)],
+        ["python", PHY_OBC_SCRIPT.name, "--config", str(config)],
         cwd=PHY_OBC_DIR,
         log_file=DEFAULT_LOG_ROOT / f"{year}_{month}_e{ensemble}_phy_obc.log",
     )
