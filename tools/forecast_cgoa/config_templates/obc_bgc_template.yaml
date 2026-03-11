@@ -1,4 +1,4 @@
-year: "{YEAR}"
+year: {YEAR}
 month: "{MONTH}"
 ensemble: "{ENSEMBLE}"
 fct_dir: "{FORECAST_BGC_DIR}"

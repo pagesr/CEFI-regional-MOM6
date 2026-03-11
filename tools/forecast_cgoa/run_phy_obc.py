@@ -22,6 +22,16 @@ def run_phy_obc(config: Path, year: str, month: str, ensemble: str, output_root:
 
     with config.open("r", encoding="utf-8") as stream:
         cfg = yaml.safe_load(stream)
+
+    # Self-heal config typing for compatibility with scientific PHY OBC script.
+    # This prevents failures if an older/stale generated config contains string years.
+    cfg["first_year"] = int(cfg["first_year"])
+    cfg["last_year"] = int(cfg["last_year"])
+    cfg["month"] = str(cfg.get("month", month)).zfill(2)
+    cfg["ensemble"] = str(cfg.get("ensemble", ensemble)).zfill(2)
+    with config.open("w", encoding="utf-8") as stream:
+        yaml.safe_dump(cfg, stream, sort_keys=False)
+
     fcst_hist = Path(cfg["fct_dir"]) / f"{year}-{month}-e{ensemble}" / "history"
     if not fcst_hist.exists():
         raise FileNotFoundError(

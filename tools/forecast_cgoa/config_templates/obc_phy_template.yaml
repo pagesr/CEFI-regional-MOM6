@@ -1,5 +1,5 @@
-first_year: "{YEAR}"
-last_year: "{YEAR}"
+first_year: {YEAR}
+last_year: {YEAR}
 month: "{MONTH}"
 ensemble: "{ENSEMBLE}"
 GOA_STATIC: "{GOA_STATIC}"
