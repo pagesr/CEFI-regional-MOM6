@@ -42,7 +42,7 @@ ncrcat_names: []
 # ----------------------------------
 segments:
   - id: 1
-    border: south
+    border: "south"
   - id: 2
     border: "west"
 # ----------------------------------
