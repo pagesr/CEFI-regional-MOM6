@@ -1,0 +1,21 @@
+GOA_STATIC: "{GOA_STATIC}"
+NEP_STATIC: "{NEP_STATIC}"
+nep_restart: "{NEP_RESTART_FILE}"
+tracer_method: nearest_s2d
+uv_method: nearest_s2d
+reuse_weights: true
+regrid_tracer_weights: regrid_bilin.nc
+regrid_u_weights: regrid_bilin_uu.nc
+regrid_v_weights: regrid_bilin_vv.nc
+variable_names:
+  temperature: Temp
+  salinity: Salt
+  sea_surface_height: ave_ssh
+  zonal_velocity: u
+  meridional_velocity: v
+OUT_IC: "{IC_ROOT}/ic_phy_{YEAR}{MONTH}01.nc"
+IC_DATE: "{IC_DATE_ISO}"
+TIME_REF: "{TIME_REF_ISO}"
+TIME_UNITS: "{TIME_UNITS}"
+TIME_CAL: gregorian
+regrid_method_attr: nearest_s2d
