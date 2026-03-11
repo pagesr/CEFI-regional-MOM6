@@ -100,6 +100,7 @@ def regrid_tracers_from_file(
     segments,
     tracers,
     time_sel="first12",
+    use_flooding=False,
 ):
 
     # --- load NEP static grid (T points) ---
@@ -192,7 +193,7 @@ def regrid_tracers_from_file(
             seg.regrid_tracer(
                 tracer,
                 suffix=str(year),
-                flood=False,
+                flood=use_flooding,
                 weight_save=True,
                 time_attrs=time_attrs,
                 time_encoding=time_encoding,
@@ -228,6 +229,7 @@ def main(config_file):
         input_file = path.join(fcst_hist, "ocean_cobalt_tracers_month_z.nc")
 
     time_sel = cfg.get("time_sel", "first12")  # 'first12' or 'all'
+    use_flooding = bool(cfg.get("use_flooding", False))
 
     if not path.exists(output_dir):
         os.makedirs(output_dir)
@@ -261,6 +263,7 @@ def main(config_file):
         segments=segments,
         tracers=tracers,
         time_sel=time_sel,
+        use_flooding=use_flooding,
     )
 
     # Optional ncrcat
