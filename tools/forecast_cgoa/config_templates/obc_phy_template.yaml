@@ -1,0 +1,27 @@
+first_year: "{YEAR}"
+last_year: "{YEAR}"
+month: "{MONTH}"
+ensemble: "{ENSEMBLE}"
+GOA_STATIC: "{GOA_STATIC}"
+NEP_STATIC: "{NEP_STATIC}"
+glorys_dir: "{HINDCAST_HISTORY_DIR}"
+fct_dir: "{FORECAST_PHY_ROOT}"
+rst_dir: "{HINDCAST_RESTART_ROOT}"
+output_dir: "{OBC_PHY_ROOT}"
+hgrid: "{GOA_HGRID}"
+ncrcat_years: false
+ncrcat_names:
+  - thetao
+  - so
+  - zos
+  - uv
+segments:
+  - id: 1
+    border: south
+  - id: 2
+    border: west
+variables:
+  - thetao
+  - so
+  - zos
+  - uv

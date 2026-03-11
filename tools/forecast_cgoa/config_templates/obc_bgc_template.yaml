@@ -1,0 +1,46 @@
+year: "{YEAR}"
+month: "{MONTH}"
+ensemble: "{ENSEMBLE}"
+fct_dir: "{FORECAST_BGC_DIR}"
+time_sel: first12
+NEP_STATIC: "{NEP_STATIC}"
+hgrid: "{GOA_HGRID}"
+output_dir: "{OBC_BGC_ROOT}"
+ncrcat_years: false
+ncrcat_names: []
+use_flooding: true
+segments:
+  - id: 1
+    border: south
+  - id: 2
+    border: west
+tracers:
+  - alk
+  - dic
+  - po4
+  - sio4
+  - o2
+  - no3
+  - nh4
+  - fed
+  - fedet
+  - ndet
+  - nbact
+  - nsmz
+  - nmdz
+  - nlgz
+  - chl
+  - chl_Lg
+  - chl_Md
+  - chl_Sm
+  - chl_Di
+  - simd
+  - silg
+  - ndi
+  - nlg
+  - nsm
+  - nmd
+  - pdi
+  - plg
+  - pmd
+  - psm
