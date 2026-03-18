@@ -373,16 +373,16 @@ def ncrcat_years(nsegments, output_dir, variables, ncrcat_names):
 def main(config_file):
     cfg = load_config(config_file)
 
-    first_year = cfg.get("first_year", 2012)
-    last_year = cfg.get("last_year", 2012)
+    first_year = int(cfg.get("first_year", 2012))
+    last_year = int(cfg.get("last_year", 2012))
 
     glorys_dir = cfg.get(
         "glorys_dir",
         "/archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_hindcast02/history/",
     )
     fct_dir = cfg.get('fct_dir', '/archive/Remi.Pages/forecast_goa/NEPbgc_fcst_dailyOB01/')
-    month = cfg.get('month', '01')
-    ensemble = cfg.get('ensemble', '01')
+    month = str(cfg.get('month', '01')).zfill(2)
+    ensemble = str(cfg.get('ensemble', '01')).zfill(2)
 
     output_dir = cfg.get("output_dir", "./outputs_CGOA_feb26")
     rst_dir = cfg.get("rst_dir", "/archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_hindcast02/restart/")
@@ -401,9 +401,13 @@ def main(config_file):
 
     variables = cfg.get("variables", [])
 
+    regrid_dir = cfg.get("regrid_dir", output_dir)
+    if not path.exists(regrid_dir):
+        os.makedirs(regrid_dir)
+
     segments = []
     for seg_cfg in cfg.get("segments", []):
-        segment = Segment(seg_cfg["id"], seg_cfg["border"], hgrid, output_dir=output_dir)
+        segment = Segment(seg_cfg["id"], seg_cfg["border"], hgrid, output_dir=output_dir, regrid_dir=regrid_dir)
         segments.append(segment)
 
     for y in range(first_year, last_year + 1):
