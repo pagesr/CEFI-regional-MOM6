@@ -37,6 +37,11 @@ NEP_STATIC = config.get(
     "NEP_STATIC",
     "/archive/Liz.Drenkard/fre/cefi/NEP/2025_07/NEP10k_202507_physics_bgc/gfdl.ncrc6-intel23-repro/pp/ocean_daily/ocean_daily.static.nc",
 )
+REGRID_DIR = config.get("REGRID_DIR", ".")
+os.makedirs(REGRID_DIR, exist_ok=True)
+
+def _weight_file(name):
+    return os.path.join(REGRID_DIR, os.path.basename(name))
 
 def regrid_tracer(fld, method='bilinear'):
     coords = xr.open_dataset(GOA_STATIC)
@@ -49,7 +54,7 @@ def regrid_tracer(fld, method='bilinear'):
         coords,
         method=method,
         periodic=False,
-        filename=config.get("regrid_tracer_weights", 'regrid_bilin.nc'),
+        filename=_weight_file(config.get("regrid_tracer_weights", 'regrid_bilin.nc')),
         reuse_weights=config.get("reuse_weights", True)
     )
     tdest = regrid(fld)
@@ -66,7 +71,7 @@ def regrid_u(fld, method='bilinear'):
         coords,
         method=method,
         periodic=False,
-        filename=config.get("regrid_u_weights", 'regrid_bilin_uu.nc'),
+        filename=_weight_file(config.get("regrid_u_weights", 'regrid_bilin_uu.nc')),
         reuse_weights=config.get("reuse_weights", True)
     )
     tdest = regrid(fld)
@@ -82,7 +87,7 @@ def regrid_v(fld, method="bilinear"):
         gsource, coords,
         method=method,
         periodic=False,
-        filename=config.get("regrid_v_weights", "regrid_bilin_vv.nc"),
+        filename=_weight_file(config.get("regrid_v_weights", "regrid_bilin_vv.nc")),
         reuse_weights=config.get("reuse_weights", True),
     )
     return regrid(fld)

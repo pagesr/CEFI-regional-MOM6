@@ -70,6 +70,8 @@ def generate_case_configs(
         "TIME_UNITS": f"days since {year}-{month}-01 00:00:00",
         "REGRID_PHY_DIR": str(output_root / "regrid_weights" / "phy"),
         "REGRID_BGC_DIR": str(output_root / "regrid_weights" / "bgc"),
+        "REGRID_IC_PHY_DIR": str(output_root / "regrid_weights" / "ic" / "phy"),
+        "REGRID_IC_BGC_DIR": str(output_root / "regrid_weights" / "ic" / "bgc"),
     }
 
     run_cfg_dir = ensure_dir(config_root / year / month / f"e{ensemble}")
