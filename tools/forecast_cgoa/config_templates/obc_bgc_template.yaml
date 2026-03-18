@@ -6,6 +6,7 @@ time_sel: first12
 NEP_STATIC: "{NEP_STATIC}"
 hgrid: "{GOA_HGRID}"
 output_dir: "{OBC_BGC_ROOT}"
+regrid_dir: "{REGRID_BGC_DIR}"
 ncrcat_years: false
 ncrcat_names: []
 use_flooding: true

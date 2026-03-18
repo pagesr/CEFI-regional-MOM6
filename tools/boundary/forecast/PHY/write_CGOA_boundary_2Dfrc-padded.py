@@ -401,9 +401,13 @@ def main(config_file):
 
     variables = cfg.get("variables", [])
 
+    regrid_dir = cfg.get("regrid_dir", output_dir)
+    if not path.exists(regrid_dir):
+        os.makedirs(regrid_dir)
+
     segments = []
     for seg_cfg in cfg.get("segments", []):
-        segment = Segment(seg_cfg["id"], seg_cfg["border"], hgrid, output_dir=output_dir)
+        segment = Segment(seg_cfg["id"], seg_cfg["border"], hgrid, output_dir=output_dir, regrid_dir=regrid_dir)
         segments.append(segment)
 
     for y in range(first_year, last_year + 1):

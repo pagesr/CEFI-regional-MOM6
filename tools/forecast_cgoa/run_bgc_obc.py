@@ -102,6 +102,9 @@ def run_bgc_obc(config: Path, year: str, month: str, ensemble: str, output_root:
     with config.open("w", encoding="utf-8") as stream:
         yaml.safe_dump(cfg, stream, sort_keys=False)
 
+    if "regrid_dir" in cfg:
+        ensure_dir(Path(cfg["regrid_dir"]))
+
     fcst_hist = Path(cfg["fct_dir"]) / f"{cfg['year']}-{cfg['month']}-e{cfg['ensemble']}" / "history"
     if not fcst_hist.exists():
         raise FileNotFoundError(
