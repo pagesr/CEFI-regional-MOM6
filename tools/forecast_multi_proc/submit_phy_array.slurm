@@ -21,17 +21,32 @@ elif [[ -f "$HOME/.conda/etc/profile.d/conda.sh" ]]; then
   # shellcheck source=/dev/null
   source "$HOME/.conda/etc/profile.d/conda.sh"
 else
-  echo "ERROR: could not find conda.sh to activate env: $CONDA_ENV_PATH" >&2
-  exit 127
+  echo "WARNING: could not find conda.sh; will try direct python path from CONDA_ENV_PATH." >&2
 fi
 
 cd "$REPO_ROOT"
 
-set +u
-conda activate "$CONDA_ENV_PATH"
-set -u
+if command -v conda >/dev/null 2>&1; then
+  set +u
+  conda activate "$CONDA_ENV_PATH"
+  set -u
+fi
 
-python tools/forecast_multi_proc/run_task_from_tsv.py \
+PYTHON_BIN="${PYTHON_BIN:-}"
+if [[ -z "$PYTHON_BIN" ]]; then
+  if [[ -x "$CONDA_ENV_PATH/bin/python" ]]; then
+    PYTHON_BIN="$CONDA_ENV_PATH/bin/python"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="$(command -v python)"
+  elif command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="$(command -v python3)"
+  else
+    echo "ERROR: no python executable found (python/python3)." >&2
+    exit 127
+  fi
+fi
+
+"$PYTHON_BIN" tools/forecast_multi_proc/run_task_from_tsv.py \
   --stage phy \
   --task-file "$TASK_FILE" \
   --task-id "$SLURM_ARRAY_TASK_ID" \

@@ -47,4 +47,6 @@ python tools/forecast_multi_proc/submit_workflow.py \
 - Override env path per submission with:
   `--conda-env-path /path/to/your/env` on `submit_workflow.py`
   (or edit the default in `submit_*_array.slurm`).
+- If `conda.sh` is unavailable on compute nodes, scripts fall back to
+  `CONDA_ENV_PATH/bin/python` (or `python`/`python3` in `PATH`).
 - `run_bgc_obc.py` may invoke NCO post-processing depending on generated config (`merge_to_single_file`).
