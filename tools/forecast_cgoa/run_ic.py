@@ -16,16 +16,6 @@ def run_ic(ic_phy_cfg: Path, ic_bgc_cfg: Path, year: str, month: str, output_roo
     ic_bgc_cfg = ic_bgc_cfg.resolve()
     output_root = output_root.resolve()
     ic_out_dir = ensure_dir(output_root / year / month / "IC")
-    import yaml
-    with ic_phy_cfg.open("r", encoding="utf-8") as f:
-        phy_cfg = yaml.safe_load(f)
-    with ic_bgc_cfg.open("r", encoding="utf-8") as f:
-        bgc_cfg = yaml.safe_load(f)
-    if "REGRID_DIR" in phy_cfg:
-        ensure_dir(Path(phy_cfg["REGRID_DIR"]))
-    if "REGRID_DIR" in bgc_cfg:
-        ensure_dir(Path(bgc_cfg["REGRID_DIR"]))
-
     phy_marker = expected_marker_file("ic_phy", ic_out_dir)
     bgc_marker = expected_marker_file("ic_bgc", ic_out_dir)
 

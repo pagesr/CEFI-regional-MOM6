@@ -4,7 +4,6 @@ nep_restart: "{NEP_RESTART_FILE}"
 tracer_method: nearest_s2d
 uv_method: nearest_s2d
 reuse_weights: true
-REGRID_DIR: "{REGRID_IC_PHY_DIR}"
 regrid_tracer_weights: regrid_bilin.nc
 regrid_u_weights: regrid_bilin_uu.nc
 regrid_v_weights: regrid_bilin_vv.nc

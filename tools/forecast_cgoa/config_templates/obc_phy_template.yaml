@@ -8,7 +8,6 @@ glorys_dir: "{HINDCAST_HISTORY_DIR}"
 fct_dir: "{FORECAST_PHY_ROOT}"
 rst_dir: "{HINDCAST_RESTART_ROOT}"
 output_dir: "{OBC_PHY_ROOT}"
-regrid_dir: "{REGRID_PHY_DIR}"
 hgrid: "{GOA_HGRID}"
 ncrcat_years: false
 ncrcat_names:

@@ -35,13 +35,6 @@ DEBUG = config.get("debug", False)
 GOA_STATIC = config["GOA_STATIC"]
 NEP_STATIC = config["NEP_STATIC"]
 NEP_RESTART_DIR = config["NEP_RESTART_DIR"]
-REGRID_DIR = config.get("REGRID_DIR", ".")
-os.makedirs(REGRID_DIR, exist_ok=True)
-
-def _weight_file(name):
-    return os.path.join(REGRID_DIR, os.path.basename(name))
-
-
 def regrid_tracer(fld, method="bilinear"):
     coords = xr.open_dataset(GOA_STATIC)
     coords = coords.rename({"geolon": "lon", "geolat": "lat"})  # interp on this
