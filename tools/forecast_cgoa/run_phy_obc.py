@@ -14,6 +14,7 @@ from utils.paths import DEFAULT_LOG_ROOT, PHY_OBC_DIR, PHY_OBC_SCRIPT
 
 
 def run_phy_obc(config: Path, year: str, month: str, ensemble: str, output_root: Path, force: bool = False) -> None:
+    config = config.resolve()
     out_dir = ensure_dir(output_root / year / month / "OBC" / "PHY" / f"e{ensemble}")
     marker = expected_marker_file(f"phy_obc_e{ensemble}", out_dir)
     if (not force) and marker.exists():

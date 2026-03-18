@@ -87,6 +87,7 @@ def _merge_bgc_outputs(out_dir: Path, cfg: dict, year: int, month: str, ensemble
 
 
 def run_bgc_obc(config: Path, year: str, month: str, ensemble: str, output_root: Path, force: bool = False) -> None:
+    config = config.resolve()
     out_dir = ensure_dir(output_root / year / month / "OBC" / "BGC" / f"e{ensemble}")
     marker = expected_marker_file(f"bgc_obc_e{ensemble}", out_dir)
     if (not force) and marker.exists():
