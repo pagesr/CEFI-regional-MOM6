@@ -43,5 +43,8 @@ python tools/forecast_multi_proc/submit_workflow.py \
 
 ## Notes
 
-- The scripts call `python` directly; use your environment/module setup in Slurm as needed.
+- The array scripts activate Conda env `/nbhome/role.medgrp/.conda/envs/medpy311` by default.
+- Override env path per submission with:
+  `--conda-env-path /path/to/your/env` on `submit_workflow.py`
+  (or edit the default in `submit_*_array.slurm`).
 - `run_bgc_obc.py` may invoke NCO post-processing depending on generated config (`merge_to_single_file`).

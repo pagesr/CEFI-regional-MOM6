@@ -12,8 +12,24 @@ set -euo pipefail
 : "${TASK_FILE:?TASK_FILE is required}"
 : "${OUTPUT_ROOT:?OUTPUT_ROOT is required}"
 : "${REPO_ROOT:?REPO_ROOT is required}"
+CONDA_ENV_PATH="${CONDA_ENV_PATH:-/nbhome/role.medgrp/.conda/envs/medpy311}"
+
+if [[ -f "/nbhome/role.medgrp/.conda/etc/profile.d/conda.sh" ]]; then
+  # shellcheck source=/dev/null
+  source /nbhome/role.medgrp/.conda/etc/profile.d/conda.sh
+elif [[ -f "$HOME/.conda/etc/profile.d/conda.sh" ]]; then
+  # shellcheck source=/dev/null
+  source "$HOME/.conda/etc/profile.d/conda.sh"
+else
+  echo "ERROR: could not find conda.sh to activate env: $CONDA_ENV_PATH" >&2
+  exit 127
+fi
 
 cd "$REPO_ROOT"
+
+set +u
+conda activate "$CONDA_ENV_PATH"
+set -u
 
 python tools/forecast_multi_proc/run_task_from_tsv.py \
   --stage phy \

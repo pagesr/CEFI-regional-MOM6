@@ -29,13 +29,14 @@ def _sbatch(cmd: list[str]) -> str:
     return job_id
 
 
-def _build_export(task_file: Path, output_root: Path, force: bool) -> str:
+def _build_export(task_file: Path, output_root: Path, force: bool, conda_env_path: str) -> str:
     force_flag = "--force" if force else ""
     return (
         f"TASK_FILE={task_file},"
         f"OUTPUT_ROOT={output_root},"
         f"REPO_ROOT={REPO_ROOT},"
-        f"FORCE_FLAG={force_flag}"
+        f"FORCE_FLAG={force_flag},"
+        f"CONDA_ENV_PATH={conda_env_path}"
     )
 
 
@@ -48,6 +49,11 @@ def main() -> None:
     parser.add_argument("--config-root", required=True)
     parser.add_argument("--task-root", default=str(DEFAULT_TASK_ROOT))
     parser.add_argument("--max-parallel", type=int, default=20, help="Max concurrent array tasks")
+    parser.add_argument(
+        "--conda-env-path",
+        default="/nbhome/role.medgrp/.conda/envs/medpy311",
+        help="Conda environment path activated inside each Slurm array task",
+    )
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
@@ -72,7 +78,7 @@ def main() -> None:
     ic_cmd = [
         "sbatch",
         f"--array=0-{nic-1}%{args.max_parallel}",
-        f"--export={_build_export(files['ic'], Path(args.output_root), args.force)}",
+        f"--export={_build_export(files['ic'], Path(args.output_root), args.force, args.conda_env_path)}",
         str(THIS_DIR / "submit_ic_array.slurm"),
     ]
 
@@ -87,14 +93,14 @@ def main() -> None:
         "sbatch",
         f"--dependency=afterok:{ic_job}",
         f"--array=0-{nphy-1}%{args.max_parallel}",
-        f"--export={_build_export(files['phy'], Path(args.output_root), args.force)}",
+        f"--export={_build_export(files['phy'], Path(args.output_root), args.force, args.conda_env_path)}",
         str(THIS_DIR / "submit_phy_array.slurm"),
     ]
     bgc_cmd = [
         "sbatch",
         f"--dependency=afterok:{ic_job}",
         f"--array=0-{nbgc-1}%{args.max_parallel}",
-        f"--export={_build_export(files['bgc'], Path(args.output_root), args.force)}",
+        f"--export={_build_export(files['bgc'], Path(args.output_root), args.force, args.conda_env_path)}",
         str(THIS_DIR / "submit_bgc_array.slurm"),
     ]
 
