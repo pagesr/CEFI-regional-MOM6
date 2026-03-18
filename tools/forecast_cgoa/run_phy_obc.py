@@ -18,7 +18,10 @@ def run_phy_obc(config: Path, year: str, month: str, ensemble: str, output_root:
     out_dir = ensure_dir(output_root / year / month / "OBC" / "PHY" / f"e{ensemble}")
     marker = expected_marker_file(f"phy_obc_e{ensemble}", out_dir)
     if (not force) and marker.exists():
+        print(f"[OBC-PHY] skipped {year}-{month} e{ensemble} (marker exists: {marker})")
         return
+
+    print(f"[OBC-PHY] running {year}-{month} e{ensemble} (force={force})")
 
 
     with config.open("r", encoding="utf-8") as stream:

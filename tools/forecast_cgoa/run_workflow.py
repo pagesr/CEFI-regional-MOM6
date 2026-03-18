@@ -26,13 +26,16 @@ def run_workflow(
     ensure_dir(config_root)
     ensure_dir(DEFAULT_LOG_ROOT)
 
+    print(f"[WORKFLOW] years={years} months={months} ensembles={ensembles} force={force}")
     for year in years:
         for month in months:
+            print(f"[WORKFLOW] case year={year} month={month}")
             # generate IC configs from the first ensemble; IC is ensemble-independent
             ic_configs = generate_case_configs(year, month, ensembles[0], output_root=output_root, config_root=config_root)
             run_ic(ic_configs["ic_phy"], ic_configs["ic_bgc"], year, month, output_root=output_root, force=force)
 
             for ensemble in ensembles:
+                print(f"[WORKFLOW]   ensemble=e{ensemble}")
                 cfgs = generate_case_configs(year, month, ensemble, output_root=output_root, config_root=config_root)
                 run_phy_obc(cfgs["obc_phy"], year, month, ensemble, output_root=output_root, force=force)
                 run_bgc_obc(cfgs["obc_bgc"], year, month, ensemble, output_root=output_root, force=force)

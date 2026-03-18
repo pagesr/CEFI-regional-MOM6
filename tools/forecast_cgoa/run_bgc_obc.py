@@ -91,7 +91,10 @@ def run_bgc_obc(config: Path, year: str, month: str, ensemble: str, output_root:
     out_dir = ensure_dir(output_root / year / month / "OBC" / "BGC" / f"e{ensemble}")
     marker = expected_marker_file(f"bgc_obc_e{ensemble}", out_dir)
     if (not force) and marker.exists():
+        print(f"[OBC-BGC] skipped {year}-{month} e{ensemble} (marker exists: {marker})")
         return
+
+    print(f"[OBC-BGC] running {year}-{month} e{ensemble} (force={force})")
 
     with config.open("r", encoding="utf-8") as stream:
         cfg = yaml.safe_load(stream)

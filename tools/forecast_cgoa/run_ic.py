@@ -19,6 +19,7 @@ def run_ic(ic_phy_cfg: Path, ic_bgc_cfg: Path, year: str, month: str, output_roo
     bgc_marker = expected_marker_file("ic_bgc", ic_out_dir)
 
     if force or not phy_marker.exists():
+        print(f"[IC-PHY] running {year}-{month} (force={force})")
         run_command(
             ["python", IC_PHY_SCRIPT.name, "--config", str(ic_phy_cfg)],
             cwd=INITIAL_DIR,
@@ -26,13 +27,19 @@ def run_ic(ic_phy_cfg: Path, ic_bgc_cfg: Path, year: str, month: str, output_roo
         )
         write_marker("ic_phy", ic_out_dir)
 
+    else:
+        print(f"[IC-PHY] skipped {year}-{month} (marker exists: {phy_marker})")
+
     if force or not bgc_marker.exists():
+        print(f"[IC-BGC] running {year}-{month} (force={force})")
         run_command(
             ["python", IC_BGC_SCRIPT.name, "--config", str(ic_bgc_cfg)],
             cwd=INITIAL_DIR,
             log_file=DEFAULT_LOG_ROOT / f"{year}_{month}_ic_bgc.log",
         )
         write_marker("ic_bgc", ic_out_dir)
+    else:
+        print(f"[IC-BGC] skipped {year}-{month} (marker exists: {bgc_marker})")
 
 
 def main() -> None:
