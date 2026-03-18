@@ -88,6 +88,27 @@ def _safe_rename_vars(ds, rename_map):
     return ds
 
 
+def _pad_last_time_step(ds):
+    """
+    Append one extra time step by duplicating the final data slice.
+    The padded timestamp is extrapolated from the last interval when possible.
+    """
+    if "time" not in ds.dims:
+        raise ValueError("Cannot pad dataset without 'time' dimension.")
+    if ds.sizes["time"] < 1:
+        raise ValueError("Cannot pad dataset with empty 'time' dimension.")
+
+    tvals = ds["time"].values
+    if len(tvals) >= 2:
+        delta = tvals[-1] - tvals[-2]
+        tnext = tvals[-1] + delta
+    else:
+        tnext = tvals[-1]
+
+    padded = ds.isel(time=[-1]).copy(deep=True).assign_coords(time=("time", [tnext]))
+    return xr.concat([ds, padded], dim="time")
+
+
 # ----------------------------
 # Core routine
 # ----------------------------
@@ -100,6 +121,7 @@ def regrid_tracers_from_file(
     segments,
     tracers,
     time_sel="first12",
+    pad_last_time=True,
     use_flooding=False,
 ):
 
@@ -134,6 +156,10 @@ def regrid_tracers_from_file(
         pass
     else:
         raise ValueError("time_sel must be 'first12' or 'all'")
+
+    if pad_last_time:
+        ds_in = _pad_last_time_step(ds_in)
+        print(f"Padded time dimension to {ds_in.sizes['time']} steps (duplicated final month).")
 
     # --- time metadata to force into Segment writer ---
     # If the file already has good CF time metadata, Segment will typically preserve it,
@@ -232,6 +258,7 @@ def main(config_file):
         input_file = path.join(fcst_hist, "ocean_cobalt_tracers_month_z.nc")
 
     time_sel = cfg.get("time_sel", "first12")  # 'first12' or 'all'
+    pad_last_time = bool(cfg.get("pad_last_time", True))
     use_flooding = bool(cfg.get("use_flooding", False))
 
     if not path.exists(output_dir):
@@ -258,6 +285,7 @@ def main(config_file):
 
     print(f"Input: {input_file}")
     print(f"Time selection: {time_sel}")
+    print(f"Pad final time step: {pad_last_time}")
     print(f"Tracers: {len(tracers)}")
     print(f"Segments: {len(segments)}")
 
@@ -270,6 +298,7 @@ def main(config_file):
         segments=segments,
         tracers=tracers,
         time_sel=time_sel,
+        pad_last_time=pad_last_time,
         use_flooding=use_flooding,
     )
 

@@ -3,6 +3,7 @@ month: "{MONTH}"
 ensemble: "{ENSEMBLE}"
 fct_dir: "{FORECAST_BGC_DIR}"
 time_sel: first12
+pad_last_time: true
 NEP_STATIC: "{NEP_STATIC}"
 hgrid: "{GOA_HGRID}"
 output_dir: "{OBC_BGC_ROOT}"

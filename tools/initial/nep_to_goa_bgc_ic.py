@@ -35,18 +35,24 @@ DEBUG = config.get("debug", False)
 GOA_STATIC = config["GOA_STATIC"]
 NEP_STATIC = config["NEP_STATIC"]
 NEP_RESTART_DIR = config["NEP_RESTART_DIR"]
+REGRID_DIR = config.get("REGRID_DIR", ".")
+os.makedirs(REGRID_DIR, exist_ok=True)
+
+
 def regrid_tracer(fld, method="bilinear"):
     coords = xr.open_dataset(GOA_STATIC)
     coords = coords.rename({"geolon": "lon", "geolat": "lat"})  # interp on this
     gsource = xr.open_dataset(NEP_STATIC, decode_times=False)   # Source grid
     gsource = gsource.rename({"geolon": "lon", "geolat": "lat"})  # interp on this
 
+    weight_name = config.get("regrid_tracer_weights", "regrid_bilin_bgc.nc")
+    weight_file = os.path.join(REGRID_DIR, os.path.basename(weight_name))
     regrid = xesmf.Regridder(
         gsource,
         coords,
         method=method,
         periodic=False,
-        filename=_weight_file(config.get("regrid_tracer_weights", "regrid_bilin_bgc.nc")),
+        filename=weight_file,
         reuse_weights=config.get("reuse_weights", True),
     )
     tdest = regrid(fld)
