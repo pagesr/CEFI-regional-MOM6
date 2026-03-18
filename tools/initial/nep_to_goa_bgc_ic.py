@@ -46,7 +46,7 @@ def regrid_tracer(fld, method="bilinear"):
         coords,
         method=method,
         periodic=False,
-        filename=config.get("regrid_tracer_weights", "regrid_bilin_bgc.nc"),
+        filename=_weight_file(config.get("regrid_tracer_weights", "regrid_bilin_bgc.nc")),
         reuse_weights=config.get("reuse_weights", True),
     )
     tdest = regrid(fld)
