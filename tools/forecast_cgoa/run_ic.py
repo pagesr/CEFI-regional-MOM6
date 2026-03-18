@@ -22,7 +22,7 @@ def run_ic(ic_phy_cfg: Path, ic_bgc_cfg: Path, year: str, month: str, output_roo
     if force or not phy_marker.exists():
         print(f"[IC-PHY] running {year}-{month} (force={force})")
         run_command(
-            ["python", IC_PHY_SCRIPT.name, "--config", str(ic_phy_cfg)],
+            ["python", IC_PHY_SCRIPT.name, "--config_file", str(ic_phy_cfg)],
             cwd=INITIAL_DIR,
             log_file=DEFAULT_LOG_ROOT / f"{year}_{month}_ic_phy.log",
         )
@@ -34,7 +34,7 @@ def run_ic(ic_phy_cfg: Path, ic_bgc_cfg: Path, year: str, month: str, output_roo
     if force or not bgc_marker.exists():
         print(f"[IC-BGC] running {year}-{month} (force={force})")
         run_command(
-            ["python", IC_BGC_SCRIPT.name, "--config", str(ic_bgc_cfg)],
+            ["python", IC_BGC_SCRIPT.name, "--config_file", str(ic_bgc_cfg)],
             cwd=INITIAL_DIR,
             log_file=DEFAULT_LOG_ROOT / f"{year}_{month}_ic_bgc.log",
         )
