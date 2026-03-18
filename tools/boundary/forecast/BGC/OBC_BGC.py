@@ -100,6 +100,7 @@ def regrid_tracers_from_file(
     segments,
     tracers,
     time_sel="first12",
+    use_flooding=False,
 ):
 
     # --- load NEP static grid (T points) ---
@@ -192,7 +193,10 @@ def regrid_tracers_from_file(
             seg.regrid_tracer(
                 tracer,
                 suffix=str(year),
-                flood=False,
+                flood=use_flooding,
+                xdim="xh",
+                ydim="yh",
+                zdim="z",
                 weight_save=True,
                 time_attrs=time_attrs,
                 time_encoding=time_encoding,
@@ -228,6 +232,7 @@ def main(config_file):
         input_file = path.join(fcst_hist, "ocean_cobalt_tracers_month_z.nc")
 
     time_sel = cfg.get("time_sel", "first12")  # 'first12' or 'all'
+    use_flooding = bool(cfg.get("use_flooding", False))
 
     if not path.exists(output_dir):
         os.makedirs(output_dir)
@@ -235,9 +240,13 @@ def main(config_file):
     # Load GOA hgrid + segments
     hgrid = xr.open_dataset(hgrid_file)
 
+    regrid_dir = cfg.get("regrid_dir", output_dir)
+    if not path.exists(regrid_dir):
+        os.makedirs(regrid_dir)
+
     segments = []
     for seg_cfg in cfg.get("segments", []):
-        segments.append(Segment(seg_cfg["id"], seg_cfg["border"], hgrid, output_dir=output_dir))
+        segments.append(Segment(seg_cfg["id"], seg_cfg["border"], hgrid, output_dir=output_dir, regrid_dir=regrid_dir))
 
     # tracers list (YAML override allowed)
     cobalt_vars = [
@@ -261,6 +270,7 @@ def main(config_file):
         segments=segments,
         tracers=tracers,
         time_sel=time_sel,
+        use_flooding=use_flooding,
     )
 
     # Optional ncrcat
