@@ -14,6 +14,7 @@ from utils.paths import DEFAULT_LOG_ROOT, IC_BGC_SCRIPT, IC_PHY_SCRIPT, INITIAL_
 def run_ic(ic_phy_cfg: Path, ic_bgc_cfg: Path, year: str, month: str, output_root: Path, force: bool = False) -> None:
     ic_phy_cfg = ic_phy_cfg.resolve()
     ic_bgc_cfg = ic_bgc_cfg.resolve()
+    output_root = output_root.resolve()
     ic_out_dir = ensure_dir(output_root / year / month / "IC")
     phy_marker = expected_marker_file("ic_phy", ic_out_dir)
     bgc_marker = expected_marker_file("ic_bgc", ic_out_dir)

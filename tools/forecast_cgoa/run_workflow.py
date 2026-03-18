@@ -22,6 +22,8 @@ def run_workflow(
     config_root: Path,
     force: bool,
 ) -> None:
+    output_root = output_root.resolve()
+    config_root = config_root.resolve()
     ensure_dir(output_root)
     ensure_dir(config_root)
     ensure_dir(DEFAULT_LOG_ROOT)

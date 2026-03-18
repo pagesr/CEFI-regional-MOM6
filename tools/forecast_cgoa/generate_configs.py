@@ -50,6 +50,9 @@ def generate_case_configs(
     config_root: Path = DEFAULT_CONFIG_ROOT,
     template_root: Path = DEFAULT_TEMPLATE_ROOT,
 ) -> dict[str, Path]:
+    output_root = output_root.resolve()
+    config_root = config_root.resolve()
+    template_root = template_root.resolve()
     case_values = {
         **DEFAULTS,
         "YEAR": year,
@@ -105,8 +108,8 @@ def main() -> None:
     parser.add_argument("--ensembles", nargs="*", default=ENSEMBLES)
     args = parser.parse_args()
 
-    output_root = Path(args.output_root)
-    config_root = Path(args.config_root)
+    output_root = Path(args.output_root).resolve()
+    config_root = Path(args.config_root).resolve()
 
     for year in args.years:
         for month in args.months:
