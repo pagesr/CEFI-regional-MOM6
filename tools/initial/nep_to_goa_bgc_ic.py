@@ -35,8 +35,6 @@ DEBUG = config.get("debug", False)
 GOA_STATIC = config["GOA_STATIC"]
 NEP_STATIC = config["NEP_STATIC"]
 NEP_RESTART_DIR = config["NEP_RESTART_DIR"]
-
-
 def regrid_tracer(fld, method="bilinear"):
     coords = xr.open_dataset(GOA_STATIC)
     coords = coords.rename({"geolon": "lon", "geolat": "lat"})  # interp on this
