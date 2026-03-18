@@ -88,3 +88,13 @@ If you see an activation error like:
 `magics-activate.sh: line 3: MAGPLUS_HOME: unbound variable`
 it comes from a site Conda activation hook when shell nounset (`set -u`) is active and `MAGPLUS_HOME` is undefined.
 The provided `submit_workflow.slurm` already guards against this by initializing `MAGPLUS_HOME` and temporarily disabling nounset during `conda activate`.
+
+
+## BGC OBC post-processing (padding + merges)
+
+After `OBC_BGC.py` runs, the workflow now does three post-processing steps per ensemble:
+1. For each tracer/segment file (e.g. `alk_001_2012.nc`), append one padded time step by copying the last value to one extra month-equivalent time.
+2. Merge segment files (`_001`, `_002`, etc.) into one per-tracer file using `ncks -A` (e.g. `alk_2012_pad.nc`).
+3. Merge all tracer files into one final ensemble file: `bgc_obc_<YEAR>_<MONTH>_e<ENSEMBLE>.nc`.
+
+This requires NCO (`ncks`) at runtime; `submit_workflow.slurm` already loads `nco`.
