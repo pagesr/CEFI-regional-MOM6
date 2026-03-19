@@ -14,19 +14,22 @@ set -euo pipefail
 : "${REPO_ROOT:?REPO_ROOT is required}"
 CONDA_ENV_PATH="${CONDA_ENV_PATH:-/nbhome/role.medgrp/.conda/envs/medpy311}"
 
+HAVE_CONDA_SH=0
 if [[ -f "/nbhome/role.medgrp/.conda/etc/profile.d/conda.sh" ]]; then
   # shellcheck source=/dev/null
   source /nbhome/role.medgrp/.conda/etc/profile.d/conda.sh
+  HAVE_CONDA_SH=1
 elif [[ -f "$HOME/.conda/etc/profile.d/conda.sh" ]]; then
   # shellcheck source=/dev/null
   source "$HOME/.conda/etc/profile.d/conda.sh"
+  HAVE_CONDA_SH=1
 else
   echo "WARNING: could not find conda.sh; will try direct python path from CONDA_ENV_PATH." >&2
 fi
 
 cd "$REPO_ROOT"
 
-if command -v conda >/dev/null 2>&1; then
+if [[ "$HAVE_CONDA_SH" == "1" ]] && command -v conda >/dev/null 2>&1; then
   set +u
   conda activate "$CONDA_ENV_PATH"
   set -u
