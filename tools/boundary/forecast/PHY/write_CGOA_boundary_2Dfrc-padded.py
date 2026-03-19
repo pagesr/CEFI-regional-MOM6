@@ -334,10 +334,46 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
             uo = _attach_2d_lonlat(uo, lonU, latU, name="uo")
             vo = _attach_2d_lonlat(vo, lonV, latV, name="vo")
 
-            seg.regrid_velocity(
+            def _uv_zero_components(uv_ds):
+                u_var_local = next((v for v in uv_ds.data_vars if v.startswith("u_")), None)
+                v_var_local = next((v for v in uv_ds.data_vars if v.startswith("v_")), None)
+                u_zero_local = (u_var_local is not None) and np.allclose(uv_ds[u_var_local].values, 0.0, equal_nan=True)
+                v_zero_local = (v_var_local is not None) and np.allclose(uv_ds[v_var_local].values, 0.0, equal_nan=True)
+                return u_zero_local, v_zero_local
+
+            uv_out = seg.regrid_velocity(
                 uo, vo, suffix=year, flood=False, rotate=False, weight_save=weight_save,
                 time_attrs=time_attrs, time_encoding=time_encoding
             )
+            u_all_zero, v_all_zero = _uv_zero_components(uv_out)
+
+            # Guardrail: if either component is all zeros, retry with periodic wrapping
+            # plus flooding. This addresses sparse/unmapped edge points on staggered grids.
+            if u_all_zero or v_all_zero:
+                which = []
+                if u_all_zero:
+                    which.append("u")
+                if v_all_zero:
+                    which.append("v")
+                print(
+                    f"WARNING: {seg.border} uv output component(s) {','.join(which)} are all zeros for year {year}. "
+                    "Retrying with periodic=True and flood=True."
+                )
+                uv_retry = seg.regrid_velocity(
+                    uo, vo, suffix=year, flood=True, rotate=False, periodic=True, weight_save=weight_save,
+                    time_attrs=time_attrs, time_encoding=time_encoding
+                )
+                u_retry_zero, v_retry_zero = _uv_zero_components(uv_retry)
+                if u_retry_zero or v_retry_zero:
+                    still = []
+                    if u_retry_zero:
+                        still.append("u")
+                    if v_retry_zero:
+                        still.append("v")
+                    raise RuntimeError(
+                        f"{seg.border} uv output component(s) {','.join(still)} remained all zeros "
+                        f"for year {year} after periodic+flood retry."
+                    )
 
     for var in variables:
         if var in ["zos", "uv"]:
