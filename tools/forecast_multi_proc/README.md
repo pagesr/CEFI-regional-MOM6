@@ -49,4 +49,6 @@ python tools/forecast_multi_proc/submit_workflow.py \
   (or edit the default in `submit_*_array.slurm`).
 - If `conda.sh` is unavailable on compute nodes, scripts fall back to
   `CONDA_ENV_PATH/bin/python` (or `python`/`python3` in `PATH`).
+- By default, PHY/BGC arrays wait for IC completion (`afterok` dependency).
+  To run stages immediately (more concurrent jobs), add `--no-ic-dependency`.
 - `run_bgc_obc.py` may invoke NCO post-processing depending on generated config (`merge_to_single_file`).

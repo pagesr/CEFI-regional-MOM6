@@ -56,6 +56,11 @@ def main() -> None:
     )
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--no-ic-dependency",
+        action="store_true",
+        help="Submit PHY/BGC arrays immediately (do not wait for IC array afterok).",
+    )
     args = parser.parse_args()
 
     files = build_task_lists(
@@ -84,25 +89,29 @@ def main() -> None:
 
     if args.dry_run:
         print("[DRY-RUN]", " ".join(ic_cmd))
-        print("[DRY-RUN] Would submit PHY/BGC with afterok dependency on IC job")
+        if args.no_ic_dependency:
+            print("[DRY-RUN] Would submit PHY/BGC immediately (no dependency on IC)")
+        else:
+            print("[DRY-RUN] Would submit PHY/BGC with afterok dependency on IC job")
         return
 
     ic_job = _sbatch(ic_cmd)
 
     phy_cmd = [
         "sbatch",
-        f"--dependency=afterok:{ic_job}",
         f"--array=0-{nphy-1}%{args.max_parallel}",
         f"--export={_build_export(files['phy'], Path(args.output_root), args.force, args.conda_env_path)}",
         str(THIS_DIR / "submit_phy_array.slurm"),
     ]
     bgc_cmd = [
         "sbatch",
-        f"--dependency=afterok:{ic_job}",
         f"--array=0-{nbgc-1}%{args.max_parallel}",
         f"--export={_build_export(files['bgc'], Path(args.output_root), args.force, args.conda_env_path)}",
         str(THIS_DIR / "submit_bgc_array.slurm"),
     ]
+    if not args.no_ic_dependency:
+        phy_cmd.insert(1, f"--dependency=afterok:{ic_job}")
+        bgc_cmd.insert(1, f"--dependency=afterok:{ic_job}")
 
     phy_job = _sbatch(phy_cmd)
     bgc_job = _sbatch(bgc_cmd)
