@@ -1,0 +1,6 @@
+# output_dir year month ensemble [optional_final_output]
+# One task per line.
+# Example without explicit final output:
+# /work/.../outputs/2012/01/OBC/BGC/e01 2012 01 01
+# Example with explicit final output:
+# /work/.../outputs/2012/01/OBC/BGC/e02 2012 01 02 /work/.../outputs/2012/01/OBC/BGC/e02/custom_name.nc
