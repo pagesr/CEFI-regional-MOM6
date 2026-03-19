@@ -5,7 +5,10 @@ from __future__ import annotations
 
 import argparse
 import csv
+import os
+import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 
@@ -26,8 +29,20 @@ def _run(cmd: list[str]) -> None:
     subprocess.run(cmd, check=True)
 
 
+def _python_executable() -> str:
+    """
+    Resolve python executable for child stage scripts.
+    Prefer explicit PYTHON_BIN, then current interpreter, then PATH fallback.
+    """
+    if os.environ.get("PYTHON_BIN"):
+        return os.environ["PYTHON_BIN"]
+    if sys.executable:
+        return sys.executable
+    return shutil.which("python") or shutil.which("python3") or "python"
+
+
 def run_stage(stage: str, row: dict[str, str], output_root: Path, force: bool) -> None:
-    py = "python"
+    py = _python_executable()
     if stage == "ic":
         cmd = [
             py,
