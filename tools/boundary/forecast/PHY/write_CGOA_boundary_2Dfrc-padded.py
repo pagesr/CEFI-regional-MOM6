@@ -353,10 +353,22 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                 tracer = ds[var]
                 tracer = _attach_2d_lonlat(tracer, lonT, latT, name=var)
                 print(tracer)
-                seg.regrid_tracer(
+                tracer_out = seg.regrid_tracer(
                     tracer, suffix=year, flood=False, weight_save=weight_save,
                     time_attrs=time_attrs, time_encoding=time_encoding
                 )
+
+                # Guardrail: retry tracers with periodic wrapping if output is all zeros.
+                out_var = next((v for v in tracer_out.data_vars if v.startswith(f"{var}_")), None)
+                if out_var is not None and np.allclose(tracer_out[out_var].values, 0.0, equal_nan=True):
+                    print(
+                        f"WARNING: {seg.border} {var} output is all zeros for year {year}. "
+                        "Retrying with periodic=True."
+                    )
+                    seg.regrid_tracer(
+                        tracer, suffix=year, flood=False, periodic=True, weight_save=weight_save,
+                        time_attrs=time_attrs, time_encoding=time_encoding
+                    )
         elif var in ds:
             for seg in segments:
                 print(f"{seg.border} {var} (from ocean_month.nc)")
