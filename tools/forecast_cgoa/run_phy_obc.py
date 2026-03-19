@@ -14,17 +14,18 @@ from utils.logging_utils import run_command
 from utils.paths import DEFAULT_LOG_ROOT, PHY_OBC_DIR, PHY_OBC_SCRIPT
 
 
+def _expected_phy_outputs(cfg: dict, year: str) -> list[Path]:
+    """Return expected per-year OBC output files for the configured variables/segments."""
+    output_dir = Path(cfg["output_dir"])
+    variables = cfg.get("variables", [])
+    segment_ids = [int(seg["id"]) for seg in cfg.get("segments", [])]
+    return [output_dir / f"{var}_{seg_id:03d}_{year}.nc" for var in variables for seg_id in segment_ids]
+
+
 def run_phy_obc(config: Path, year: str, month: str, ensemble: str, output_root: Path, force: bool = False) -> None:
     config = config.resolve()
     output_root = output_root.resolve()
     out_dir = ensure_dir(output_root / year / month / "OBC" / "PHY" / f"e{ensemble}")
-    marker = expected_marker_file(f"phy_obc_e{ensemble}", out_dir)
-    if (not force) and marker.exists():
-        print(f"[OBC-PHY] skipped {year}-{month} e{ensemble} (marker exists: {marker})")
-        return
-
-    print(f"[OBC-PHY] running {year}-{month} e{ensemble} (force={force})")
-
 
     with config.open("r", encoding="utf-8") as stream:
         cfg = yaml.safe_load(stream)
@@ -37,6 +38,21 @@ def run_phy_obc(config: Path, year: str, month: str, ensemble: str, output_root:
     cfg["ensemble"] = str(cfg.get("ensemble", ensemble)).zfill(2)
     with config.open("w", encoding="utf-8") as stream:
         yaml.safe_dump(cfg, stream, sort_keys=False)
+
+    marker = expected_marker_file(f"phy_obc_e{ensemble}", out_dir)
+    expected_files = _expected_phy_outputs(cfg, year)
+    missing_files = [f for f in expected_files if not f.exists()]
+    if (not force) and marker.exists() and not missing_files:
+        print(f"[OBC-PHY] skipped {year}-{month} e{ensemble} (marker and outputs exist)")
+        return
+
+    if marker.exists() and missing_files:
+        print(
+            f"[OBC-PHY] rerunning {year}-{month} e{ensemble}: "
+            f"{len(missing_files)} expected output file(s) missing despite marker"
+        )
+    else:
+        print(f"[OBC-PHY] running {year}-{month} e{ensemble} (force={force})")
 
     fcst_hist = Path(cfg["fct_dir"]) / f"{year}-{month}-e{ensemble}" / "history"
     if not fcst_hist.exists():
