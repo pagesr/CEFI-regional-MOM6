@@ -782,6 +782,7 @@ class Segment():
             method=method,
             locstream_out=True,
             unmapped_to_nan=True,
+            extrap_method='nearest_s2d',
             periodic=periodic,
             filename=path.join(self.regrid_dir, f'regrid_{self.segstr}_{regrid_suffix}.nc'),
             reuse_weights=weight_save
