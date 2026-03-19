@@ -127,7 +127,7 @@ def _attach_2d_lonlat(da, lon2d, lat2d, dims_expected=None, name="var"):
 # Core routine
 # ----------------------------
 def write_year(year, glorys_dir, nep_static, segments, variables, month, ensemble, fct_dir, rst_dir,
-               is_first_year=False, is_last_year=False):
+               is_first_year=False, is_last_year=False, weight_save=False):
 
     nt = 13
     nt_src = 12  # real source months
@@ -307,10 +307,23 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
             tracer = ds["zos"]
             print(tracer.shape)
             tracer = _attach_2d_lonlat(tracer, lonT, latT, name="zos")
-            seg.regrid_tracer(
-                tracer, suffix=year, flood=False, weight_save=True,
+            zos_out = seg.regrid_tracer(
+                tracer, suffix=year, flood=False, weight_save=weight_save,
                 time_attrs=time_attrs, time_encoding=time_encoding
             )
+
+            # Guardrail: if a segment comes out entirely zero (known symptom for
+            # dateline/unmapped issues), retry with periodic regridding.
+            zos_var = next((v for v in zos_out.data_vars if v.startswith("zos_")), None)
+            if zos_var is not None and np.allclose(zos_out[zos_var].values, 0.0, equal_nan=True):
+                print(
+                    f"WARNING: {seg.border} zos output is all zeros for year {year}. "
+                    "Retrying with periodic=True."
+                )
+                seg.regrid_tracer(
+                    tracer, suffix=year, flood=False, periodic=True, weight_save=weight_save,
+                    time_attrs=time_attrs, time_encoding=time_encoding
+                )
 
     if "uv" in variables and ("uo" in ds) and ("vo" in ds):
         for seg in segments:
@@ -322,7 +335,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
             vo = _attach_2d_lonlat(vo, lonV, latV, name="vo")
 
             seg.regrid_velocity(
-                uo, vo, suffix=year, flood=False, rotate=False, weight_save=True,
+                uo, vo, suffix=year, flood=False, rotate=False, weight_save=weight_save,
                 time_attrs=time_attrs, time_encoding=time_encoding
             )
 
@@ -341,7 +354,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                 tracer = _attach_2d_lonlat(tracer, lonT, latT, name=var)
                 print(tracer)
                 seg.regrid_tracer(
-                    tracer, suffix=year, flood=False, weight_save=True,
+                    tracer, suffix=year, flood=False, weight_save=weight_save,
                     time_attrs=time_attrs, time_encoding=time_encoding
                 )
         elif var in ds:
@@ -350,7 +363,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                 tracer = ds_sfc[var]
                 tracer = _attach_2d_lonlat(tracer, lonT, latT, name=var)
                 seg.regrid_tracer(
-                    tracer, suffix=year, flood=False, weight_save=True,
+                    tracer, suffix=year, flood=False, weight_save=weight_save,
                     time_attrs=time_attrs, time_encoding=time_encoding
                 )
         else:
@@ -401,6 +414,10 @@ def main(config_file):
 
     variables = cfg.get("variables", [])
 
+    # Default to False to avoid stale/corrupted cached weight reuse across runs.
+    # Set weight_save: true in YAML if you explicitly want to reuse saved xESMF weights.
+    weight_save = bool(cfg.get("weight_save", False))
+
     regrid_dir = cfg.get("regrid_dir", output_dir)
     if not path.exists(regrid_dir):
         os.makedirs(regrid_dir)
@@ -424,6 +441,7 @@ def main(config_file):
             rst_dir=rst_dir,
             is_first_year=(y == first_year),
             is_last_year=(y == last_year),
+            weight_save=weight_save,
         )
 
     if ncrcat_years_flag:
