@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import subprocess
+import sys
+from shutil import which
 from pathlib import Path
 from typing import Sequence
 
@@ -20,8 +22,17 @@ def _absolutize_config_args(command: Sequence[str]) -> list[str]:
     return cmd
 
 
+def _resolve_python_executable(command: Sequence[str]) -> list[str]:
+    cmd = list(command)
+    if not cmd:
+        return cmd
+    if cmd[0] == "python" and which("python") is None and sys.executable:
+        cmd[0] = sys.executable
+    return cmd
+
+
 def run_command(command: Sequence[str], cwd: Path, log_file: Path) -> None:
-    command = _absolutize_config_args(command)
+    command = _resolve_python_executable(_absolutize_config_args(command))
     ensure_dir(log_file.parent)
     with log_file.open("a", encoding="utf-8") as log:
         log.write(f"\n[{now_stamp()}] START\n")

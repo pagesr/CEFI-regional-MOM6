@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 import yaml
@@ -45,7 +46,7 @@ def run_phy_obc(config: Path, year: str, month: str, ensemble: str, output_root:
         )
 
     run_command(
-        ["python", PHY_OBC_SCRIPT.name, "--config", str(config)],
+        [sys.executable, PHY_OBC_SCRIPT.name, "--config", str(config)],
         cwd=PHY_OBC_DIR,
         log_file=DEFAULT_LOG_ROOT / f"{year}_{month}_e{ensemble}_phy_obc.log",
     )
