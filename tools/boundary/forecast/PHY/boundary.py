@@ -593,6 +593,7 @@ class Segment():
             target_coords,
             method=method,
             locstream_out=True,
+            unmapped_to_nan=True,
             periodic=periodic,
             filename=path.join(self.regrid_dir, f'regrid_{self.segstr}_u.nc'),
             reuse_weights=weight_save
@@ -602,6 +603,7 @@ class Segment():
             target_coords,
             method=method,
             locstream_out=True,
+            unmapped_to_nan=True,
             periodic=periodic,
             filename=path.join(self.regrid_dir, f'regrid_{self.segstr}_v.nc'),
             reuse_weights=weight_save
@@ -779,6 +781,7 @@ class Segment():
             target_coords,
             method=method,
             locstream_out=True,
+            unmapped_to_nan=True,
             periodic=periodic,
             filename=path.join(self.regrid_dir, f'regrid_{self.segstr}_{regrid_suffix}.nc'),
             reuse_weights=weight_save

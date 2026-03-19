@@ -307,10 +307,23 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
             tracer = ds["zos"]
             print(tracer.shape)
             tracer = _attach_2d_lonlat(tracer, lonT, latT, name="zos")
-            seg.regrid_tracer(
+            zos_out = seg.regrid_tracer(
                 tracer, suffix=year, flood=False, weight_save=weight_save,
                 time_attrs=time_attrs, time_encoding=time_encoding
             )
+
+            # Guardrail: if a segment comes out entirely zero (known symptom for
+            # dateline/unmapped issues), retry with periodic regridding.
+            zos_var = next((v for v in zos_out.data_vars if v.startswith("zos_")), None)
+            if zos_var is not None and np.allclose(zos_out[zos_var].values, 0.0, equal_nan=True):
+                print(
+                    f"WARNING: {seg.border} zos output is all zeros for year {year}. "
+                    "Retrying with periodic=True."
+                )
+                seg.regrid_tracer(
+                    tracer, suffix=year, flood=False, periodic=True, weight_save=weight_save,
+                    time_attrs=time_attrs, time_encoding=time_encoding
+                )
 
     if "uv" in variables and ("uo" in ds) and ("vo" in ds):
         for seg in segments:
