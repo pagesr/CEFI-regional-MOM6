@@ -307,23 +307,24 @@ def _match_target_lon_convention(source_lon, target_lon):
     Shift target longitudes to the same wrap convention as source longitudes.
     Handles the common 0..360 vs -180..180 mismatch.
     """
-    src = np.asarray(source_lon)
-    tgt = np.asarray(target_lon)
+    src = np.asarray(source_lon, dtype=float)
+    tgt = np.asarray(target_lon, dtype=float)
     if src.size == 0 or tgt.size == 0:
         return target_lon
 
-    src_min = float(np.nanmin(src))
-    src_max = float(np.nanmax(src))
+    # Determine the source's "best" wrap convention by choosing the one
+    # with smaller longitudinal span (important for dateline-crossing domains).
+    src_360 = np.mod(src, 360.0)
+    src_180 = np.mod(src + 180.0, 360.0) - 180.0
+    span_360 = float(np.nanmax(src_360) - np.nanmin(src_360))
+    span_180 = float(np.nanmax(src_180) - np.nanmin(src_180))
 
-    # Source in 0..360-like convention: move negative target lons to [0, 360)
-    if src_min >= 0.0 and src_max > 180.0:
-        return xarray.where(target_lon < 0.0, target_lon + 360.0, target_lon)
+    if span_360 <= span_180:
+        # Match source in [0, 360)
+        return target_lon % 360.0
 
-    # Source in -180..180-like convention: move >180 target lons to (-180, 180]
-    if src_min < 0.0 and src_max <= 180.0:
-        return xarray.where(target_lon > 180.0, target_lon - 360.0, target_lon)
-
-    return target_lon
+    # Match source in [-180, 180)
+    return ((target_lon + 180.0) % 360.0) - 180.0
 
 
 class Segment():
