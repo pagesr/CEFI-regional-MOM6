@@ -106,6 +106,9 @@ def main() -> None:
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
 
+    # Keep stage logs with workflow outputs (instead of defaulting to forecast_cgoa/logs).
+    os.environ["FORECAST_LOG_ROOT"] = str(Path(args.output_root).resolve() / "logs")
+
     row = _load_row(Path(args.task_file), args.task_id)
     run_stage(args.stage, row, Path(args.output_root), force=args.force)
 

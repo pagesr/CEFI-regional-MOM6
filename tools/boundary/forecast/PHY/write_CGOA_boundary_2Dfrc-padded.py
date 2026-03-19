@@ -375,27 +375,6 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                         f"for year {year} after periodic+flood retry."
                     )
 
-            # Guardrail: some segment/component combinations can come out all zeros
-            # with non-periodic mapping. Retry that segment with periodic wrapping.
-            u_var = next((v for v in uv_out.data_vars if v.startswith("u_")), None)
-            v_var = next((v for v in uv_out.data_vars if v.startswith("v_")), None)
-            u_all_zero = (u_var is not None) and np.allclose(uv_out[u_var].values, 0.0, equal_nan=True)
-            v_all_zero = (v_var is not None) and np.allclose(uv_out[v_var].values, 0.0, equal_nan=True)
-            if u_all_zero or v_all_zero:
-                which = []
-                if u_all_zero:
-                    which.append("u")
-                if v_all_zero:
-                    which.append("v")
-                print(
-                    f"WARNING: {seg.border} uv output component(s) {','.join(which)} are all zeros for year {year}. "
-                    "Retrying with periodic=True."
-                )
-                seg.regrid_velocity(
-                    uo, vo, suffix=year, flood=False, rotate=False, periodic=True, weight_save=weight_save,
-                    time_attrs=time_attrs, time_encoding=time_encoding
-                )
-
     for var in variables:
         if var in ["zos", "uv"]:
             continue
