@@ -9,39 +9,33 @@
 
 set -euo pipefail
 
-: "${TASK_LIST:?TASK_LIST is required}"
+FIXED_PROC_DIR="/work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6/tools/forecast_multi_proc"
+FIXED_REPO_ROOT="/work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6"
+
+# Optional override; by default we use the fixed task-list location requested.
+TASK_LIST="${TASK_LIST:-$FIXED_PROC_DIR/bgc_obc_postprocess_tasks.txt}"
 
 # Optional: keep originals even when merge succeeds.
 REMOVE_ORIGINALS_ON_SUCCESS="${REMOVE_ORIGINALS_ON_SUCCESS:-1}"
 
-# REPO_ROOT is optional. If not set, default to where sbatch was launched.
-REPO_ROOT="${REPO_ROOT:-${SLURM_SUBMIT_DIR:-$PWD}}"
-
-if [[ ! -d "$REPO_ROOT" ]]; then
-  echo "ERROR: REPO_ROOT directory not found: $REPO_ROOT" >&2
+if [[ ! -d "$FIXED_REPO_ROOT" ]]; then
+  echo "ERROR: fixed repo root not found: $FIXED_REPO_ROOT" >&2
   exit 1
 fi
-
-cd "$REPO_ROOT"
 
 if [[ ! -f "$TASK_LIST" ]]; then
   echo "ERROR: TASK_LIST not found: $TASK_LIST" >&2
   exit 1
 fi
 
+cd "$FIXED_REPO_ROOT"
+
 module load nco
 
-merge_script="${MERGE_SCRIPT:-$REPO_ROOT/tools/forecast_multi_proc/postprocess_bgc_obc_nco.sh}"
+merge_script="${MERGE_SCRIPT:-$FIXED_PROC_DIR/postprocess_bgc_obc_nco.sh}"
 if [[ ! -x "$merge_script" ]]; then
-  task_dir="$(cd "$(dirname "$TASK_LIST")" && pwd)"
-  fallback_merge_script="$task_dir/postprocess_bgc_obc_nco.sh"
-  if [[ -x "$fallback_merge_script" ]]; then
-    merge_script="$fallback_merge_script"
-  else
-    echo "ERROR: merge script missing or not executable: $merge_script" >&2
-    echo "       (also tried TASK_LIST sibling: $fallback_merge_script)" >&2
-    exit 1
-  fi
+  echo "ERROR: merge script missing or not executable: $merge_script" >&2
+  exit 1
 fi
 
 processed_count=0

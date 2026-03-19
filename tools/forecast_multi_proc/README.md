@@ -56,8 +56,10 @@ python tools/forecast_multi_proc/submit_workflow.py \
 - Slurm stdout/stderr are written to `<output-root>/logs` (set by `submit_workflow.py`)
   so jobs do not depend on write permissions inside the repository tree.
 - `run_bgc_obc.py` may invoke NCO post-processing depending on generated config (`merge_to_single_file`).
-- For batch/manual postprocessing via Slurm, prepare a task list file (see `bgc_obc_postprocess_tasks.txt`) and submit:
-  `sbatch --export=ALL,TASK_LIST=$PWD/tools/forecast_multi_proc/bgc_obc_postprocess_tasks.txt tools/forecast_multi_proc/submit_bgc_obc_postprocess.slurm`
-  (set `REMOVE_ORIGINALS_ON_SUCCESS=0` to keep originals; set `REPO_ROOT` only if needed).
+- For batch/manual postprocessing via Slurm, this script is configured for fixed paths under
+  `/work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6/tools/forecast_multi_proc` and uses
+  `bgc_obc_postprocess_tasks.txt` there by default:
+  `sbatch /work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6/tools/forecast_multi_proc/submit_bgc_obc_postprocess.slurm`
+  (optionally override `TASK_LIST` or set `REMOVE_ORIGINALS_ON_SUCCESS=0` to keep originals).
 - You can also run the same merge step manually later with:
   `tools/forecast_multi_proc/postprocess_bgc_obc_nco.sh <output_dir> <year> <month> <ensemble> [final_output]`.
