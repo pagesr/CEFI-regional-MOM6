@@ -301,6 +301,31 @@ def reuse_regrid(*args, **kwargs):
         regrid = xesmf.Regridder(*args, **kwargs)
         return regrid
 
+
+def _match_target_lon_convention(source_lon, target_lon):
+    """
+    Shift target longitudes to the same wrap convention as source longitudes.
+    Handles the common 0..360 vs -180..180 mismatch.
+    """
+    src = np.asarray(source_lon)
+    tgt = np.asarray(target_lon)
+    if src.size == 0 or tgt.size == 0:
+        return target_lon
+
+    src_min = float(np.nanmin(src))
+    src_max = float(np.nanmax(src))
+
+    # Source in 0..360-like convention: move negative target lons to [0, 360)
+    if src_min >= 0.0 and src_max > 180.0:
+        return xarray.where(target_lon < 0.0, target_lon + 360.0, target_lon)
+
+    # Source in -180..180-like convention: move >180 target lons to (-180, 180]
+    if src_min < 0.0 and src_max <= 180.0:
+        return xarray.where(target_lon > 180.0, target_lon - 360.0, target_lon)
+
+    return target_lon
+
+
 class Segment():
     """One segment of a MOM6 open boundary.
 
@@ -556,10 +581,15 @@ class Segment():
             usource = flood_missing(usource, xdim=xdim, ydim=ydim, zdim=zdim).load()
             vsource = flood_missing(vsource, xdim=xdim, ydim=ydim, zdim=zdim).load()
     
+        # Align destination longitude convention with source to avoid wrap mismatches.
+        target_coords = self.coords.copy(deep=True)
+        if 'lon' in usource.coords:
+            target_coords['lon'] = _match_target_lon_convention(usource['lon'], target_coords['lon'])
+
         # Horizontally interpolate velocity to MOM boundary (LocStream out)
         uregrid = reuse_regrid(
             usource,
-            self.coords,
+            target_coords,
             method=method,
             locstream_out=True,
             periodic=periodic,
@@ -568,7 +598,7 @@ class Segment():
         )
         vregrid = reuse_regrid(
             vsource,
-            self.coords,
+            target_coords,
             method=method,
             locstream_out=True,
             periodic=periodic,
@@ -738,9 +768,14 @@ class Segment():
             if flood:
                 tsource[name] = flood_missing(tsource[name], xdim=xdim, ydim=ydim, zdim=zdim).load()
 
+        # Align destination longitude convention with source to avoid wrap mismatches.
+        target_coords = self.coords.copy(deep=True)
+        if 'lon' in tsource.coords:
+            target_coords['lon'] = _match_target_lon_convention(tsource['lon'], target_coords['lon'])
+
         regrid = reuse_regrid(
             tsource,
-            self.coords,
+            target_coords,
             method=method,
             locstream_out=True,
             periodic=periodic,
