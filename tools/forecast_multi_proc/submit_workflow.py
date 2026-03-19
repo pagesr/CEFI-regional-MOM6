@@ -62,12 +62,15 @@ def main() -> None:
         help="Submit PHY/BGC arrays immediately (do not wait for IC array afterok).",
     )
     args = parser.parse_args()
+    output_root = Path(args.output_root)
+    logs_dir = output_root / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
 
     files = build_task_lists(
         years=args.years,
         months=args.months,
         ensembles=args.ensembles,
-        output_root=Path(args.output_root),
+        output_root=output_root,
         config_root=Path(args.config_root),
         task_root=Path(args.task_root),
     )
@@ -83,7 +86,9 @@ def main() -> None:
     ic_cmd = [
         "sbatch",
         f"--array=0-{nic-1}%{args.max_parallel}",
-        f"--export={_build_export(files['ic'], Path(args.output_root), args.force, args.conda_env_path)}",
+        f"--output={logs_dir}/%x_%A_%a.out",
+        f"--error={logs_dir}/%x_%A_%a.err",
+        f"--export={_build_export(files['ic'], output_root, args.force, args.conda_env_path)}",
         str(THIS_DIR / "submit_ic_array.slurm"),
     ]
 
@@ -100,13 +105,17 @@ def main() -> None:
     phy_cmd = [
         "sbatch",
         f"--array=0-{nphy-1}%{args.max_parallel}",
-        f"--export={_build_export(files['phy'], Path(args.output_root), args.force, args.conda_env_path)}",
+        f"--output={logs_dir}/%x_%A_%a.out",
+        f"--error={logs_dir}/%x_%A_%a.err",
+        f"--export={_build_export(files['phy'], output_root, args.force, args.conda_env_path)}",
         str(THIS_DIR / "submit_phy_array.slurm"),
     ]
     bgc_cmd = [
         "sbatch",
         f"--array=0-{nbgc-1}%{args.max_parallel}",
-        f"--export={_build_export(files['bgc'], Path(args.output_root), args.force, args.conda_env_path)}",
+        f"--output={logs_dir}/%x_%A_%a.out",
+        f"--error={logs_dir}/%x_%A_%a.err",
+        f"--export={_build_export(files['bgc'], output_root, args.force, args.conda_env_path)}",
         str(THIS_DIR / "submit_bgc_array.slurm"),
     ]
     if not args.no_ic_dependency:
