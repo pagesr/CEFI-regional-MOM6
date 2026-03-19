@@ -4,13 +4,14 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 import yaml
 
 from utils.helpers import ensure_dir, expected_marker_file, write_marker
 from utils.logging_utils import run_command
-from utils.paths import BGC_OBC_DIR, BGC_OBC_SCRIPT, DEFAULT_LOG_ROOT
+from utils.paths import BGC_OBC_DIR, BGC_OBC_POSTPROCESS_SCRIPT, BGC_OBC_SCRIPT, DEFAULT_LOG_ROOT
 
 
 def run_bgc_obc(config: Path, year: str, month: str, ensemble: str, output_root: Path, force: bool = False) -> None:
@@ -42,10 +43,24 @@ def run_bgc_obc(config: Path, year: str, month: str, ensemble: str, output_root:
         )
 
     run_command(
-        ["python", BGC_OBC_SCRIPT.name, "--config", str(config)],
+        [sys.executable, BGC_OBC_SCRIPT.name, "--config", str(config)],
         cwd=BGC_OBC_DIR,
         log_file=DEFAULT_LOG_ROOT / f"{year}_{month}_e{ensemble}_bgc_obc.log",
     )
+
+    if bool(cfg.get("merge_to_single_file", True)):
+        run_command(
+            [
+                "bash",
+                str(BGC_OBC_POSTPROCESS_SCRIPT),
+                str(out_dir),
+                year,
+                month,
+                ensemble,
+            ],
+            cwd=BGC_OBC_DIR,
+            log_file=DEFAULT_LOG_ROOT / f"{year}_{month}_e{ensemble}_bgc_postprocess.log",
+        )
 
     write_marker(f"bgc_obc_e{ensemble}", out_dir)
 
