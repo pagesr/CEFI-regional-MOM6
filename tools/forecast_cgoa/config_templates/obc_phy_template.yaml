@@ -10,7 +10,8 @@ rst_dir: "{HINDCAST_RESTART_ROOT}"
 output_dir: "{OBC_PHY_ROOT}"
 hgrid: "{GOA_HGRID}"
 ncrcat_years: false
-weight_save: false
+weight_save: true
+regrid_dir: "/work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6/tools/forecast_multi_proc/regrid/phy"
 ncrcat_names:
   - thetao
   - so
