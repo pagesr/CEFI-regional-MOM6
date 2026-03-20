@@ -1,5 +1,6 @@
 """Central paths for the CGOA forecast IC/OBC automation workflow."""
 
+import os
 from pathlib import Path
 
 WORKFLOW_ROOT = Path(__file__).resolve().parents[1]
@@ -18,5 +19,5 @@ BGC_OBC_POSTPROCESS_SCRIPT = FORECAST_CGOA_DIR / "postprocess_bgc_obc_nco.sh"
 
 DEFAULT_OUTPUT_ROOT = WORKFLOW_ROOT / "outputs"
 DEFAULT_CONFIG_ROOT = WORKFLOW_ROOT / "generated_configs"
-DEFAULT_LOG_ROOT = WORKFLOW_ROOT / "logs"
+DEFAULT_LOG_ROOT = Path(os.environ.get("FORECAST_LOG_ROOT", str(WORKFLOW_ROOT / "logs")))
 DEFAULT_TEMPLATE_ROOT = WORKFLOW_ROOT / "config_templates"
