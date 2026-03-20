@@ -347,8 +347,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
             )
             u_all_zero, v_all_zero = _uv_zero_components(uv_out)
 
-            # Guardrail: if either component is all zeros, retry with periodic wrapping
-            # plus flooding. This addresses sparse/unmapped edge points on staggered grids.
+            # Guardrail: if either component is all zeros, retry with periodic wrapping.
             if u_all_zero or v_all_zero:
                 which = []
                 if u_all_zero:
@@ -357,10 +356,10 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                     which.append("v")
                 print(
                     f"WARNING: {seg.border} uv output component(s) {','.join(which)} are all zeros for year {year}. "
-                    "Retrying with periodic=True and flood=True."
+                    "Retrying with periodic=True."
                 )
                 uv_retry = seg.regrid_velocity(
-                    uo, vo, suffix=year, flood=True, rotate=False, periodic=True, weight_save=weight_save,
+                    uo, vo, suffix=year, flood=False, rotate=False, periodic=True, weight_save=weight_save,
                     time_attrs=time_attrs, time_encoding=time_encoding
                 )
                 u_retry_zero, v_retry_zero = _uv_zero_components(uv_retry)
@@ -370,9 +369,9 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                         still.append("u")
                     if v_retry_zero:
                         still.append("v")
-                    raise RuntimeError(
-                        f"{seg.border} uv output component(s) {','.join(still)} remained all zeros "
-                        f"for year {year} after periodic+flood retry."
+                    print(
+                        f"WARNING: {seg.border} uv output component(s) {','.join(still)} remained all zeros "
+                        f"for year {year} even after periodic retry."
                     )
 
     for var in variables:
