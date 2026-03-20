@@ -14,7 +14,7 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  postprocess_bgc_obc_nco.sh <output_dir> <year> <month> <ensemble> [final_output]
+  postprocess_bgc_obc_nco.sh <output_dir> <year> <month> <ensemble> [final_output] [reggrid_file]
 
 Arguments:
   output_dir    Directory containing tracer segment files from OBC_BGC.py
@@ -22,6 +22,7 @@ Arguments:
   month         2-digit month (e.g., 01)
   ensemble      2-digit ensemble (e.g., 01)
   final_output  Optional full path for final merged file
+  reggrid_file Optional reggrid file to append into final output
 
 Example:
   postprocess_bgc_obc_nco.sh outputs/2012/01/OBC/BGC/e01 2012 01 01
@@ -33,7 +34,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   exit 0
 fi
 
-if [[ $# -lt 4 || $# -gt 5 ]]; then
+if [[ $# -lt 4 || $# -gt 6 ]]; then
   usage >&2
   exit 2
 fi
@@ -43,10 +44,16 @@ YEAR="$2"
 MONTH="$(printf '%02d' "$3")"
 ENSEMBLE="$(printf '%02d' "$4")"
 FINAL_OUT="${5:-${OUTPUT_DIR}/bgc_obc_${YEAR}_${MONTH}_e${ENSEMBLE}.nc}"
+REGGRID_FILE="${6:-}"
 
 if ! command -v ncks >/dev/null 2>&1; then
   echo "ERROR: ncks not found in PATH. Load/install NCO first." >&2
   exit 127
+fi
+
+if [[ -n "$REGGRID_FILE" && ! -f "$REGGRID_FILE" ]]; then
+  echo "ERROR: reggrid_file not found: $REGGRID_FILE" >&2
+  exit 1
 fi
 
 if [[ ! -d "$OUTPUT_DIR" ]]; then
@@ -110,6 +117,11 @@ cp -f "${merged_tracers[0]}" "$FINAL_OUT"
 for tf in "${merged_tracers[@]:1}"; do
   ncks -A "$tf" "$FINAL_OUT"
 done
+
+
+if [[ -n "$REGGRID_FILE" ]]; then
+  ncks -A "$REGGRID_FILE" "$FINAL_OUT"
+fi
 
 echo "Wrote final merged BGC OBC file: $FINAL_OUT"
 
