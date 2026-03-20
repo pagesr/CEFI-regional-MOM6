@@ -582,28 +582,21 @@ class Segment():
             usource = flood_missing(usource, xdim=xdim, ydim=ydim, zdim=zdim).load()
             vsource = flood_missing(vsource, xdim=xdim, ydim=ydim, zdim=zdim).load()
     
-        # Align destination longitude convention with source to avoid wrap mismatches.
-        target_coords = self.coords.copy(deep=True)
-        if 'lon' in usource.coords:
-            target_coords['lon'] = _match_target_lon_convention(usource['lon'], target_coords['lon'])
-
         # Horizontally interpolate velocity to MOM boundary (LocStream out)
         uregrid = reuse_regrid(
             usource,
-            target_coords,
+            self.coords,
             method=method,
             locstream_out=True,
-            unmapped_to_nan=True,
             periodic=periodic,
             filename=path.join(self.regrid_dir, f'regrid_{self.segstr}_u.nc'),
             reuse_weights=weight_save
         )
         vregrid = reuse_regrid(
             vsource,
-            target_coords,
+            self.coords,
             method=method,
             locstream_out=True,
-            unmapped_to_nan=True,
             periodic=periodic,
             filename=path.join(self.regrid_dir, f'regrid_{self.segstr}_v.nc'),
             reuse_weights=weight_save
