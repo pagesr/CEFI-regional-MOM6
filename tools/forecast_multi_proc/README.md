@@ -65,11 +65,16 @@ python tools/forecast_multi_proc/submit_workflow.py \
   (auto-created if missing; reusable across cases).
 - By default, PHY/BGC arrays wait for IC completion (`afterok` dependency).
   To run stages immediately (more concurrent jobs), add `--no-ic-dependency`.
-- Slurm stdout/stderr are written to `<output-root>/logs` (set by `submit_workflow.py`)
-  so jobs do not depend on write permissions inside the repository tree.
+- Slurm stdout/stderr are written to a writable log dir chosen by `submit_workflow.py`:
+  it tries `<output-root>/logs` first, then falls back to
+  `tools/forecast_multi_proc/logs` if needed.
+  You can override explicitly with `--slurm-log-dir /path/to/writable/logs`.
 - `run_bgc_obc.py` may invoke NCO post-processing depending on generated config (`merge_to_single_file`).
 - For batch/manual postprocessing via Slurm, run from this directory:
   `sbatch tools/forecast_multi_proc/submit_bgc_obc_postprocess.slurm`
   (optionally override `TASK_LIST` or set `REMOVE_ORIGINALS_ON_SUCCESS=0` to keep originals).
 - You can also run the same merge step manually later with:
   `tools/forecast_multi_proc/postprocess_bgc_obc_nco.sh <output_dir> <year> <month> <ensemble> [final_output]`.
+- To scan PHY/BGC OBC `.nc` outputs for all-zero variables/files and write a report, run:
+  `python tools/forecast_multi_proc/check_obc_all_zero.py --year 2012 --month 01 --ensemble 03`
+  (report is written to `tools/forecast_multi_proc/WARNNING.txt` by default).
