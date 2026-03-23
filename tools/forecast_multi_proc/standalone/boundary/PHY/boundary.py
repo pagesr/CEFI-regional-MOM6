@@ -322,6 +322,21 @@ def _match_target_lon_convention(source_lon, target_lon):
         return target_lon % 360.0
     return ((target_lon + 180.0) % 360.0) - 180.0
 
+
+def _infer_xy_dims_for_flood(arr, fallback_x="lon", fallback_y="lat"):
+    """
+    Infer horizontal x/y dimension names for flood_kara from a DataArray.
+    If lon/lat are 2D coordinates, use their underlying dims; otherwise fallback.
+    """
+    if "lon" in arr.coords and "lat" in arr.coords:
+        lon_dims = tuple(arr["lon"].dims)
+        lat_dims = tuple(arr["lat"].dims)
+        if len(lon_dims) >= 2 and lon_dims == lat_dims:
+            return lon_dims[-1], lon_dims[-2]
+    if len(arr.dims) >= 2:
+        return arr.dims[-1], arr.dims[-2]
+    return fallback_x, fallback_y
+
 class Segment():
     """One segment of a MOM6 open boundary.
 
@@ -574,8 +589,10 @@ class Segment():
             kwargs.pop("z_i_src", None)
     
         if flood:
-            usource = flood_missing(usource, xdim=xdim, ydim=ydim, zdim=zdim).load()
-            vsource = flood_missing(vsource, xdim=xdim, ydim=ydim, zdim=zdim).load()
+            xdim_u, ydim_u = _infer_xy_dims_for_flood(usource, fallback_x=xdim, fallback_y=ydim)
+            xdim_v, ydim_v = _infer_xy_dims_for_flood(vsource, fallback_x=xdim, fallback_y=ydim)
+            usource = flood_missing(usource, xdim=xdim_u, ydim=ydim_u, zdim=zdim).load()
+            vsource = flood_missing(vsource, xdim=xdim_v, ydim=ydim_v, zdim=zdim).load()
 
         coords_u = self.coords.copy(deep=True)
         coords_v = self.coords.copy(deep=True)
