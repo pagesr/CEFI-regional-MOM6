@@ -64,6 +64,7 @@ def generate_case_configs(
         "OBC_PHY_ROOT": str(output_root / year / month / "OBC" / "PHY" / f"e{ensemble}"),
         "OBC_BGC_ROOT": str(output_root / year / month / "OBC" / "BGC" / f"e{ensemble}"),
         "REGRID_OBC_PHY_ROOT": str(Path(__file__).resolve().parents[2] / "regrid_obc_phy_shared"),
+        "REGRID_OBC_BGC_ROOT": str(Path(__file__).resolve().parents[2] / "regrid_obc_bgc_shared"),
         "NEP_RESTART_FILE": f"{DEFAULTS['HINDCAST_RESTART_ROOT']}/restdate_{year}{month}01/MOM_{year}{month}01.res.nc",
         "NEP_RESTART_DIR": f"{DEFAULTS['HINDCAST_RESTART_ROOT']}/restdate_{year}{month}01",
         "IC_DATE_ISO": f"{year}-{month}-01T00:00:00",

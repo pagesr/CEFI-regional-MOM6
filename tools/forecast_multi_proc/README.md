@@ -60,6 +60,9 @@ python tools/forecast_multi_proc/submit_workflow.py \
 - PHY OBC xESMF weights are stored/reused in
   `tools/forecast_multi_proc/regrid_obc_phy_shared`
   (auto-created if missing; reusable across cases).
+- BGC OBC xESMF weights are stored/reused in
+  `tools/forecast_multi_proc/regrid_obc_bgc_shared`
+  (auto-created if missing; reusable across cases).
 - By default, PHY/BGC arrays wait for IC completion (`afterok` dependency).
   To run stages immediately (more concurrent jobs), add `--no-ic-dependency`.
 - Slurm stdout/stderr are written to `<output-root>/logs` (set by `submit_workflow.py`)

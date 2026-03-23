@@ -7,6 +7,7 @@ pad_last_time: true
 NEP_STATIC: "{NEP_STATIC}"
 hgrid: "{GOA_HGRID}"
 output_dir: "{OBC_BGC_ROOT}"
+regrid_dir: "{REGRID_OBC_BGC_ROOT}"
 merge_to_single_file: true
 ncrcat_years: false
 ncrcat_names: []
