@@ -58,7 +58,8 @@ python tools/forecast_multi_proc/submit_workflow.py \
 - `submit_bgc_obc_postprocess.slurm` is path-portable by default and runs relative to
   the `tools/forecast_multi_proc` directory (override with `PROC_DIR` if needed).
 - PHY OBC xESMF weights are stored/reused in
-  `tools/forecast_multi_proc/regrid_obc_phy` (auto-created if missing).
+  `tools/forecast_multi_proc/regrid_obc_phy/<year>/<month>/e<ensemble>`
+  (auto-created if missing; avoids stale cross-case weight reuse).
 - By default, PHY/BGC arrays wait for IC completion (`afterok` dependency).
   To run stages immediately (more concurrent jobs), add `--no-ic-dependency`.
 - Slurm stdout/stderr are written to `<output-root>/logs` (set by `submit_workflow.py`)

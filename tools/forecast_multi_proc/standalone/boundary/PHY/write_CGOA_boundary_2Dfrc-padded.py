@@ -124,6 +124,20 @@ def _attach_2d_lonlat(da, lon2d, lat2d, dims_expected=None, name="var"):
     return da
 
 
+def _all_finite_values_zero(da, atol=1e-14):
+    vals = np.asarray(da.values)
+    finite = np.isfinite(vals)
+    if not finite.any():
+        return False
+    return np.all(np.abs(vals[finite]) <= atol)
+
+
+def _remove_if_exists(filepath):
+    if path.exists(filepath):
+        os.remove(filepath)
+        print(f"[PHY-OBC] Removed stale weight file: {filepath}")
+
+
 # ----------------------------
 # Core routine
 # ----------------------------
@@ -317,10 +331,18 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
             tracer = ds["zos"]
             print(tracer.shape)
             tracer = _attach_2d_lonlat(tracer, lonT, latT, name="zos")
-            seg.regrid_tracer(
+            out = seg.regrid_tracer(
                 tracer, suffix=year, flood=False, weight_save=weight_save,
                 time_attrs=time_attrs, time_encoding=time_encoding
             )
+            zkey = f"zos_{seg.segstr}"
+            if zkey in out and _all_finite_values_zero(out[zkey]):
+                print(f"[PHY-OBC] WARNING: {zkey} is all zeros. Regenerating tracer weights and retrying once.")
+                _remove_if_exists(path.join(seg.regrid_dir, f"regrid_{seg.segstr}_t.nc"))
+                seg.regrid_tracer(
+                    tracer, suffix=year, flood=False, weight_save=weight_save,
+                    time_attrs=time_attrs, time_encoding=time_encoding
+                )
 
     if "uv" in variables and ("uo" in ds) and ("vo" in ds):
         print("[PHY-OBC] Regridding variable group: uv")
@@ -332,10 +354,26 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
             uo = _attach_2d_lonlat(uo, lonU, latU, name="uo")
             vo = _attach_2d_lonlat(vo, lonV, latV, name="vo")
 
-            seg.regrid_velocity(
+            out_uv = seg.regrid_velocity(
                 uo, vo, suffix=year, flood=False, rotate=False, weight_save=weight_save,
                 time_attrs=time_attrs, time_encoding=time_encoding
             )
+            ukey = f"u_{seg.segstr}"
+            vkey = f"v_{seg.segstr}"
+            bad_u = ukey in out_uv and _all_finite_values_zero(out_uv[ukey])
+            bad_v = vkey in out_uv and _all_finite_values_zero(out_uv[vkey])
+            if bad_u or bad_v:
+                print(
+                    f"[PHY-OBC] WARNING: {seg.border} uv output has all-zero component(s): "
+                    f"{'u' if bad_u else ''}{' and ' if (bad_u and bad_v) else ''}{'v' if bad_v else ''}. "
+                    "Regenerating UV weights and retrying once."
+                )
+                _remove_if_exists(path.join(seg.regrid_dir, f"regrid_{seg.segstr}_u.nc"))
+                _remove_if_exists(path.join(seg.regrid_dir, f"regrid_{seg.segstr}_v.nc"))
+                seg.regrid_velocity(
+                    uo, vo, suffix=year, flood=False, rotate=False, weight_save=weight_save,
+                    time_attrs=time_attrs, time_encoding=time_encoding
+                )
 
     for var in variables:
         if var in ["zos", "uv"]:
@@ -352,19 +390,35 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                 tracer = ds[var]
                 tracer = _attach_2d_lonlat(tracer, lonT, latT, name=var)
                 print(tracer)
-                seg.regrid_tracer(
+                out = seg.regrid_tracer(
                     tracer, suffix=year, flood=False, weight_save=weight_save,
                     time_attrs=time_attrs, time_encoding=time_encoding
                 )
+                tkey = f"{var}_{seg.segstr}"
+                if tkey in out and _all_finite_values_zero(out[tkey]):
+                    print(f"[PHY-OBC] WARNING: {tkey} is all zeros. Regenerating tracer weights and retrying once.")
+                    _remove_if_exists(path.join(seg.regrid_dir, f"regrid_{seg.segstr}_t.nc"))
+                    seg.regrid_tracer(
+                        tracer, suffix=year, flood=False, weight_save=weight_save,
+                        time_attrs=time_attrs, time_encoding=time_encoding
+                    )
         elif var in ds:
             for seg in segments:
                 print(f"{seg.border} {var} (from ocean_month.nc)")
                 tracer = ds_sfc[var]
                 tracer = _attach_2d_lonlat(tracer, lonT, latT, name=var)
-                seg.regrid_tracer(
+                out = seg.regrid_tracer(
                     tracer, suffix=year, flood=False, weight_save=weight_save,
                     time_attrs=time_attrs, time_encoding=time_encoding
                 )
+                tkey = f"{var}_{seg.segstr}"
+                if tkey in out and _all_finite_values_zero(out[tkey]):
+                    print(f"[PHY-OBC] WARNING: {tkey} is all zeros. Regenerating tracer weights and retrying once.")
+                    _remove_if_exists(path.join(seg.regrid_dir, f"regrid_{seg.segstr}_t.nc"))
+                    seg.regrid_tracer(
+                        tracer, suffix=year, flood=False, weight_save=weight_save,
+                        time_attrs=time_attrs, time_encoding=time_encoding
+                    )
         else:
             raise ValueError(f"{var} not found in datasets for year={year}")
 
