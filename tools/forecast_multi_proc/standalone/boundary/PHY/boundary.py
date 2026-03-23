@@ -301,6 +301,27 @@ def reuse_regrid(*args, **kwargs):
         regrid = xesmf.Regridder(*args, **kwargs)
         return regrid
 
+
+def _match_target_lon_convention(source_lon, target_lon):
+    """
+    Shift target longitudes to the same wrap convention as source longitudes.
+    Handles common 0..360 vs -180..180 mismatches.
+    """
+    src = np.asarray(source_lon, dtype=float)
+    tgt = np.asarray(target_lon, dtype=float)
+    if src.size == 0 or tgt.size == 0:
+        return target_lon
+
+    # Choose the source convention with smaller span (works for dateline-crossing domains).
+    src_360 = np.mod(src, 360.0)
+    src_180 = np.mod(src + 180.0, 360.0) - 180.0
+    span_360 = float(np.nanmax(src_360) - np.nanmin(src_360))
+    span_180 = float(np.nanmax(src_180) - np.nanmin(src_180))
+
+    if span_360 <= span_180:
+        return target_lon % 360.0
+    return ((target_lon + 180.0) % 360.0) - 180.0
+
 class Segment():
     """One segment of a MOM6 open boundary.
 
@@ -555,22 +576,33 @@ class Segment():
         if flood:
             usource = flood_missing(usource, xdim=xdim, ydim=ydim, zdim=zdim).load()
             vsource = flood_missing(vsource, xdim=xdim, ydim=ydim, zdim=zdim).load()
-    
+
+        coords_u = self.coords.copy(deep=True)
+        coords_v = self.coords.copy(deep=True)
+        if 'lon' in usource.coords:
+            coords_u['lon'] = _match_target_lon_convention(usource['lon'], coords_u['lon'])
+        if 'lon' in vsource.coords:
+            coords_v['lon'] = _match_target_lon_convention(vsource['lon'], coords_v['lon'])
+
         # Horizontally interpolate velocity to MOM boundary (LocStream out)
         uregrid = reuse_regrid(
             usource,
-            self.coords,
+            coords_u,
             method=method,
             locstream_out=True,
+            unmapped_to_nan=True,
+            extrap_method='nearest_s2d',
             periodic=periodic,
             filename=path.join(self.regrid_dir, f'regrid_{self.segstr}_u.nc'),
             reuse_weights=weight_save
         )
         vregrid = reuse_regrid(
             vsource,
-            self.coords,
+            coords_v,
             method=method,
             locstream_out=True,
+            unmapped_to_nan=True,
+            extrap_method='nearest_s2d',
             periodic=periodic,
             filename=path.join(self.regrid_dir, f'regrid_{self.segstr}_v.nc'),
             reuse_weights=weight_save
