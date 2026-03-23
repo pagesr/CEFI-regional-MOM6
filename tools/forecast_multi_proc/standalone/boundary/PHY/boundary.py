@@ -301,6 +301,42 @@ def reuse_regrid(*args, **kwargs):
         regrid = xesmf.Regridder(*args, **kwargs)
         return regrid
 
+
+def _match_target_lon_convention(source_lon, target_lon):
+    """
+    Shift target longitudes to the same wrap convention as source longitudes.
+    Handles common 0..360 vs -180..180 mismatches.
+    """
+    src = np.asarray(source_lon, dtype=float)
+    tgt = np.asarray(target_lon, dtype=float)
+    if src.size == 0 or tgt.size == 0:
+        return target_lon
+
+    # Choose the source convention with smaller span (works for dateline-crossing domains).
+    src_360 = np.mod(src, 360.0)
+    src_180 = np.mod(src + 180.0, 360.0) - 180.0
+    span_360 = float(np.nanmax(src_360) - np.nanmin(src_360))
+    span_180 = float(np.nanmax(src_180) - np.nanmin(src_180))
+
+    if span_360 <= span_180:
+        return target_lon % 360.0
+    return ((target_lon + 180.0) % 360.0) - 180.0
+
+
+def _infer_xy_dims_for_flood(arr, fallback_x="lon", fallback_y="lat"):
+    """
+    Infer horizontal x/y dimension names for flood_kara from a DataArray.
+    If lon/lat are 2D coordinates, use their underlying dims; otherwise fallback.
+    """
+    if "lon" in arr.coords and "lat" in arr.coords:
+        lon_dims = tuple(arr["lon"].dims)
+        lat_dims = tuple(arr["lat"].dims)
+        if len(lon_dims) >= 2 and lon_dims == lat_dims:
+            return lon_dims[-1], lon_dims[-2]
+    if len(arr.dims) >= 2:
+        return arr.dims[-1], arr.dims[-2]
+    return fallback_x, fallback_y
+
 class Segment():
     """One segment of a MOM6 open boundary.
 
@@ -524,7 +560,7 @@ class Segment():
             self, usource, vsource,
             method='nearest_s2d', periodic=False, write=True,
             flood=False, fill='b', xdim='lon', ydim='lat', zdim='z', z_i_src=None, rotate=True,
-            time_attrs=None, time_encoding=None, weight_save=False , **kwargs):
+            time_attrs=None, time_encoding=None, weight_save=False, robust=False, **kwargs):
         """Interpolate velocity onto segment and (optionally) write to file.
     
         Args:
@@ -553,27 +589,43 @@ class Segment():
             kwargs.pop("z_i_src", None)
     
         if flood:
-            usource = flood_missing(usource, xdim=xdim, ydim=ydim, zdim=zdim).load()
-            vsource = flood_missing(vsource, xdim=xdim, ydim=ydim, zdim=zdim).load()
-    
+            xdim_u, ydim_u = _infer_xy_dims_for_flood(usource, fallback_x=xdim, fallback_y=ydim)
+            xdim_v, ydim_v = _infer_xy_dims_for_flood(vsource, fallback_x=xdim, fallback_y=ydim)
+            usource = flood_missing(usource, xdim=xdim_u, ydim=ydim_u, zdim=zdim).load()
+            vsource = flood_missing(vsource, xdim=xdim_v, ydim=ydim_v, zdim=zdim).load()
+
+        coords_u = self.coords.copy(deep=True)
+        coords_v = self.coords.copy(deep=True)
+        if 'lon' in usource.coords:
+            coords_u['lon'] = _match_target_lon_convention(usource['lon'], coords_u['lon'])
+        if 'lon' in vsource.coords:
+            coords_v['lon'] = _match_target_lon_convention(vsource['lon'], coords_v['lon'])
+
         # Horizontally interpolate velocity to MOM boundary (LocStream out)
-        uregrid = reuse_regrid(
-            usource,
-            self.coords,
+        regrid_kwargs = dict(
             method=method,
             locstream_out=True,
             periodic=periodic,
+        )
+        if robust:
+            regrid_kwargs.update(
+                unmapped_to_nan=True,
+                extrap_method='nearest_s2d',
+            )
+
+        uregrid = reuse_regrid(
+            usource,
+            coords_u,
             filename=path.join(self.regrid_dir, f'regrid_{self.segstr}_u.nc'),
-            reuse_weights=weight_save
+            reuse_weights=weight_save,
+            **regrid_kwargs,
         )
         vregrid = reuse_regrid(
             vsource,
-            self.coords,
-            method=method,
-            locstream_out=True,
-            periodic=periodic,
+            coords_v,
             filename=path.join(self.regrid_dir, f'regrid_{self.segstr}_v.nc'),
-            reuse_weights=weight_save
+            reuse_weights=weight_save,
+            **regrid_kwargs,
         )
     
         udest = uregrid(usource)
