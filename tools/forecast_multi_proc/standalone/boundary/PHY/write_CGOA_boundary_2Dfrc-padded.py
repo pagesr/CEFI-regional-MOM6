@@ -124,16 +124,6 @@ def _attach_2d_lonlat(da, lon2d, lat2d, dims_expected=None, name="var"):
     return da
 
 
-def _component_is_all_zero(ds_uv, key):
-    if key not in ds_uv:
-        return False
-    arr = ds_uv[key].values
-    finite = np.isfinite(arr)
-    if not finite.any():
-        return False
-    return np.all(np.abs(arr[finite]) < 1e-14)
-
-
 # ----------------------------
 # Core routine
 # ----------------------------
@@ -342,21 +332,10 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
             uo = _attach_2d_lonlat(uo, lonU, latU, name="uo")
             vo = _attach_2d_lonlat(vo, lonV, latV, name="vo")
 
-            uv = seg.regrid_velocity(
+            seg.regrid_velocity(
                 uo, vo, suffix=year, flood=False, rotate=False, weight_save=weight_save,
                 time_attrs=time_attrs, time_encoding=time_encoding
             )
-
-            vkey = f"v_{seg.segstr}"
-            if _component_is_all_zero(uv, vkey):
-                print(
-                    f"[PHY-OBC] WARNING: {seg.border} {vkey} is all zeros with fast regrid; "
-                    "retrying robust mode for this segment."
-                )
-                uv = seg.regrid_velocity(
-                    uo, vo, suffix=year, flood=False, rotate=False, weight_save=weight_save,
-                    robust=True, time_attrs=time_attrs, time_encoding=time_encoding
-                )
 
     for var in variables:
         if var in ["zos", "uv"]:
