@@ -1,8 +1,12 @@
 # forecast_multi_proc
 
-Parallel Slurm-array orchestration for the existing `tools/forecast_cgoa` workflow.
+Parallel Slurm-array orchestration with a **standalone workflow bundle** in this directory.
 
-This directory does **not** modify `forecast_cgoa` logic; it schedules the existing stage runners in parallel:
+The `standalone/` subtree contains local copies of the stage runners, templates, and scientific scripts so future changes can be made in `tools/forecast_multi_proc` only:
+- `standalone/forecast_cgoa` (copied runners/config generator/utils/templates)
+- `standalone/initial` (copied IC scripts)
+- `standalone/boundary/PHY` and `standalone/boundary/BGC` (copied OBC scripts)
+
 - IC stage (`run_ic.py`) once per year/month
 - PHY OBC stage (`run_phy_obc.py`) per year/month/ensemble
 - BGC OBC stage (`run_bgc_obc.py`) per year/month/ensemble
@@ -51,15 +55,18 @@ python tools/forecast_multi_proc/submit_workflow.py \
   (or edit the default in `submit_*_array.slurm`).
 - If `conda.sh` is unavailable on compute nodes, scripts fall back to
   `CONDA_ENV_PATH/bin/python` (or `python`/`python3` in `PATH`).
+- `submit_bgc_obc_postprocess.slurm` is path-portable by default and runs relative to
+  the `tools/forecast_multi_proc` directory (override with `PROC_DIR` if needed).
+- PHY OBC xESMF weights are stored/reused in
+  `tools/forecast_multi_proc/regrid_obc_phy/<year>/<month>/e<ensemble>`
+  (auto-created if missing; avoids stale cross-case weight reuse).
 - By default, PHY/BGC arrays wait for IC completion (`afterok` dependency).
   To run stages immediately (more concurrent jobs), add `--no-ic-dependency`.
 - Slurm stdout/stderr are written to `<output-root>/logs` (set by `submit_workflow.py`)
   so jobs do not depend on write permissions inside the repository tree.
 - `run_bgc_obc.py` may invoke NCO post-processing depending on generated config (`merge_to_single_file`).
-- For batch/manual postprocessing via Slurm, this script is configured for fixed paths under
-  `/work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6/tools/forecast_multi_proc` and uses
-  `bgc_obc_postprocess_tasks.txt` there by default:
-  `sbatch /work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6/tools/forecast_multi_proc/submit_bgc_obc_postprocess.slurm`
+- For batch/manual postprocessing via Slurm, run from this directory:
+  `sbatch tools/forecast_multi_proc/submit_bgc_obc_postprocess.slurm`
   (optionally override `TASK_LIST` or set `REMOVE_ORIGINALS_ON_SUCCESS=0` to keep originals).
 - You can also run the same merge step manually later with:
   `tools/forecast_multi_proc/postprocess_bgc_obc_nco.sh <output_dir> <year> <month> <ensemble> [final_output]`.

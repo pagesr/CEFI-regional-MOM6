@@ -12,8 +12,8 @@ import sys
 from pathlib import Path
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-FORECAST_CGOA_DIR = REPO_ROOT / "tools" / "forecast_cgoa"
+THIS_DIR = Path(__file__).resolve().parent
+FORECAST_CGOA_DIR = THIS_DIR / "standalone" / "forecast_cgoa"
 
 
 def _load_row(task_file: Path, task_id: int) -> dict[str, str]:
