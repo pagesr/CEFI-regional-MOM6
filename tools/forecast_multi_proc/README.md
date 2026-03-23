@@ -57,6 +57,8 @@ python tools/forecast_multi_proc/submit_workflow.py \
   `CONDA_ENV_PATH/bin/python` (or `python`/`python3` in `PATH`).
 - `submit_bgc_obc_postprocess.slurm` is path-portable by default and runs relative to
   the `tools/forecast_multi_proc` directory (override with `PROC_DIR` if needed).
+- PHY OBC xESMF weights are stored/reused in
+  `tools/forecast_multi_proc/regrid_obc_phy` (auto-created if missing).
 - By default, PHY/BGC arrays wait for IC completion (`afterok` dependency).
   To run stages immediately (more concurrent jobs), add `--no-ic-dependency`.
 - Slurm stdout/stderr are written to `<output-root>/logs` (set by `submit_workflow.py`)

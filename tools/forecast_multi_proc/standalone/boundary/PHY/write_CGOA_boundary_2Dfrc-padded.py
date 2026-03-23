@@ -127,7 +127,7 @@ def _attach_2d_lonlat(da, lon2d, lat2d, dims_expected=None, name="var"):
 # Core routine
 # ----------------------------
 def write_year(year, glorys_dir, nep_static, segments, variables, month, ensemble, fct_dir, rst_dir,
-               is_first_year=False, is_last_year=False):
+               is_first_year=False, is_last_year=False, weight_save=True):
 
     nt = 13
     nt_src = 12  # real source months
@@ -308,7 +308,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
             print(tracer.shape)
             tracer = _attach_2d_lonlat(tracer, lonT, latT, name="zos")
             seg.regrid_tracer(
-                tracer, suffix=year, flood=False, weight_save=True,
+                tracer, suffix=year, flood=False, weight_save=weight_save,
                 time_attrs=time_attrs, time_encoding=time_encoding
             )
 
@@ -322,7 +322,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
             vo = _attach_2d_lonlat(vo, lonV, latV, name="vo")
 
             seg.regrid_velocity(
-                uo, vo, suffix=year, flood=False, rotate=False, weight_save=True,
+                uo, vo, suffix=year, flood=False, rotate=False, weight_save=weight_save,
                 time_attrs=time_attrs, time_encoding=time_encoding
             )
 
@@ -341,7 +341,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                 tracer = _attach_2d_lonlat(tracer, lonT, latT, name=var)
                 print(tracer)
                 seg.regrid_tracer(
-                    tracer, suffix=year, flood=False, weight_save=True,
+                    tracer, suffix=year, flood=False, weight_save=weight_save,
                     time_attrs=time_attrs, time_encoding=time_encoding
                 )
         elif var in ds:
@@ -350,7 +350,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                 tracer = ds_sfc[var]
                 tracer = _attach_2d_lonlat(tracer, lonT, latT, name=var)
                 seg.regrid_tracer(
-                    tracer, suffix=year, flood=False, weight_save=True,
+                    tracer, suffix=year, flood=False, weight_save=weight_save,
                     time_attrs=time_attrs, time_encoding=time_encoding
                 )
         else:
@@ -373,16 +373,16 @@ def ncrcat_years(nsegments, output_dir, variables, ncrcat_names):
 def main(config_file):
     cfg = load_config(config_file)
 
-    first_year = cfg.get("first_year", 2012)
-    last_year = cfg.get("last_year", 2012)
+    first_year = int(cfg.get("first_year", 2012))
+    last_year = int(cfg.get("last_year", 2012))
 
     glorys_dir = cfg.get(
         "glorys_dir",
         "/archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_hindcast02/history/",
     )
     fct_dir = cfg.get('fct_dir', '/archive/Remi.Pages/forecast_goa/NEPbgc_fcst_dailyOB01/')
-    month = cfg.get('month', '01')
-    ensemble = cfg.get('ensemble', '01')
+    month = str(cfg.get('month', '01')).zfill(2)
+    ensemble = str(cfg.get('ensemble', '01')).zfill(2)
 
     output_dir = cfg.get("output_dir", "./outputs_CGOA_feb26")
     rst_dir = cfg.get("rst_dir", "/archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_hindcast02/restart/")
@@ -390,12 +390,16 @@ def main(config_file):
     hgrid_file = cfg.get("hgrid", "/work/Remi.Pages/GOA2p5k/GRID/CGOA_2.5k/ocean_hgrid.nc")
     ncrcat_years_flag = cfg.get("ncrcat_years", False)
     ncrcat_names = cfg.get("ncrcat_names", [])
+    weight_save = bool(cfg.get("weight_save", True))
+    regrid_dir = cfg.get("regrid_dir", output_dir)
 
     nep_static = _require(cfg, "NEP_STATIC")
     _ = cfg.get("GOA_STATIC", None)
 
     if not path.exists(output_dir):
         os.makedirs(output_dir)
+    if not path.exists(regrid_dir):
+        os.makedirs(regrid_dir)
 
     hgrid = xr.open_dataset(hgrid_file)
 
@@ -403,7 +407,7 @@ def main(config_file):
 
     segments = []
     for seg_cfg in cfg.get("segments", []):
-        segment = Segment(seg_cfg["id"], seg_cfg["border"], hgrid, output_dir=output_dir)
+        segment = Segment(seg_cfg["id"], seg_cfg["border"], hgrid, output_dir=output_dir, regrid_dir=regrid_dir)
         segments.append(segment)
 
     for y in range(first_year, last_year + 1):
@@ -420,6 +424,7 @@ def main(config_file):
             rst_dir=rst_dir,
             is_first_year=(y == first_year),
             is_last_year=(y == last_year),
+            weight_save=weight_save,
         )
 
     if ncrcat_years_flag:
