@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=bgc_obc_merge
-#SBATCH --output=/work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6/tools/forecast_multi_proc/logs/%x_%j.out
-#SBATCH --error=/work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6/tools/forecast_multi_proc/logs/%x_%j.err
+#SBATCH --output=logs/%x_%j.out
+#SBATCH --error=logs/%x_%j.err
 #SBATCH --time=04:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
@@ -9,11 +9,11 @@
 
 set -euo pipefail
 
-FIXED_PROC_DIR="/work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6/tools/forecast_multi_proc"
-FIXED_REPO_ROOT="/work/Remi.Pages/IC-BC-GOA/CEFI-regional-MOM6"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROC_DIR="${PROC_DIR:-$SCRIPT_DIR}"
 
-# Optional override; by default we use the fixed task-list location requested.
-TASK_LIST="${TASK_LIST:-$FIXED_PROC_DIR/bgc_obc_postprocess_tasks.txt}"
+# Optional override; by default we use the task-list in this directory.
+TASK_LIST="${TASK_LIST:-$PROC_DIR/bgc_obc_postprocess_tasks.txt}"
 
 # Optional: keep originals even when merge succeeds.
 REMOVE_ORIGINALS_ON_SUCCESS="${REMOVE_ORIGINALS_ON_SUCCESS:-1}"
@@ -22,21 +22,16 @@ REMOVE_ORIGINALS_ON_SUCCESS="${REMOVE_ORIGINALS_ON_SUCCESS:-1}"
 # Leave empty to disable.
 REUSE_REGGRID_FILE="${REUSE_REGGRID_FILE:-}"
 
-if [[ ! -d "$FIXED_REPO_ROOT" ]]; then
-  echo "ERROR: fixed repo root not found: $FIXED_REPO_ROOT" >&2
-  exit 1
-fi
-
 if [[ ! -f "$TASK_LIST" ]]; then
   echo "ERROR: TASK_LIST not found: $TASK_LIST" >&2
   exit 1
 fi
 
-cd "$FIXED_REPO_ROOT"
+cd "$PROC_DIR"
 
 module load nco
 
-merge_script="${MERGE_SCRIPT:-$FIXED_PROC_DIR/postprocess_bgc_obc_nco.sh}"
+merge_script="${MERGE_SCRIPT:-$PROC_DIR/postprocess_bgc_obc_nco.sh}"
 if [[ ! -x "$merge_script" ]]; then
   echo "ERROR: merge script missing or not executable: $merge_script" >&2
   exit 1

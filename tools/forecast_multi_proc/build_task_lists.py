@@ -8,7 +8,7 @@ import csv
 import sys
 from pathlib import Path
 
-FORECAST_CGOA_DIR = Path(__file__).resolve().parents[1] / "forecast_cgoa"
+FORECAST_CGOA_DIR = Path(__file__).resolve().parent / "standalone" / "forecast_cgoa"
 sys.path.insert(0, str(FORECAST_CGOA_DIR))
 
 from generate_configs import generate_case_configs  # type: ignore  # noqa: E402
