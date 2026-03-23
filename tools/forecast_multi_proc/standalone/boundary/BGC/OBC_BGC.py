@@ -231,13 +231,16 @@ def main(config_file):
 
     if not path.exists(output_dir):
         os.makedirs(output_dir)
+    regrid_dir = cfg.get("regrid_dir", output_dir)
+    if not path.exists(regrid_dir):
+        os.makedirs(regrid_dir)
 
     # Load GOA hgrid + segments
     hgrid = xr.open_dataset(hgrid_file)
 
     segments = []
     for seg_cfg in cfg.get("segments", []):
-        segments.append(Segment(seg_cfg["id"], seg_cfg["border"], hgrid, output_dir=output_dir))
+        segments.append(Segment(seg_cfg["id"], seg_cfg["border"], hgrid, output_dir=output_dir, regrid_dir=regrid_dir))
 
     # tracers list (YAML override allowed)
     cobalt_vars = [
