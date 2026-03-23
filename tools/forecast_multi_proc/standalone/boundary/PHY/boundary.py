@@ -560,7 +560,7 @@ class Segment():
             self, usource, vsource,
             method='nearest_s2d', periodic=False, write=True,
             flood=False, fill='b', xdim='lon', ydim='lat', zdim='z', z_i_src=None, rotate=True,
-            time_attrs=None, time_encoding=None, weight_save=False , **kwargs):
+            time_attrs=None, time_encoding=None, weight_save=False, robust=False, **kwargs):
         """Interpolate velocity onto segment and (optionally) write to file.
     
         Args:
@@ -602,27 +602,30 @@ class Segment():
             coords_v['lon'] = _match_target_lon_convention(vsource['lon'], coords_v['lon'])
 
         # Horizontally interpolate velocity to MOM boundary (LocStream out)
+        regrid_kwargs = dict(
+            method=method,
+            locstream_out=True,
+            periodic=periodic,
+        )
+        if robust:
+            regrid_kwargs.update(
+                unmapped_to_nan=True,
+                extrap_method='nearest_s2d',
+            )
+
         uregrid = reuse_regrid(
             usource,
             coords_u,
-            method=method,
-            locstream_out=True,
-            unmapped_to_nan=True,
-            extrap_method='nearest_s2d',
-            periodic=periodic,
             filename=path.join(self.regrid_dir, f'regrid_{self.segstr}_u.nc'),
-            reuse_weights=weight_save
+            reuse_weights=weight_save,
+            **regrid_kwargs,
         )
         vregrid = reuse_regrid(
             vsource,
             coords_v,
-            method=method,
-            locstream_out=True,
-            unmapped_to_nan=True,
-            extrap_method='nearest_s2d',
-            periodic=periodic,
             filename=path.join(self.regrid_dir, f'regrid_{self.segstr}_v.nc'),
-            reuse_weights=weight_save
+            reuse_weights=weight_save,
+            **regrid_kwargs,
         )
     
         udest = uregrid(usource)
