@@ -26,6 +26,9 @@ def run_phy_obc(config: Path, year: str, month: str, ensemble: str, output_root:
     config = config.resolve()
     output_root = output_root.resolve()
     out_dir = ensure_dir(output_root / year / month / "OBC" / "PHY" / f"e{ensemble}")
+    print(f"[OBC-PHY] config={config}")
+    print(f"[OBC-PHY] output_root={output_root}")
+    print(f"[OBC-PHY] case_out_dir={out_dir}")
 
     with config.open("r", encoding="utf-8") as stream:
         cfg = yaml.safe_load(stream)
@@ -42,6 +45,11 @@ def run_phy_obc(config: Path, year: str, month: str, ensemble: str, output_root:
     marker = expected_marker_file(f"phy_obc_e{ensemble}", out_dir)
     expected_files = _expected_phy_outputs(cfg, year)
     missing_files = [f for f in expected_files if not f.exists()]
+    print(f"[OBC-PHY] expected_files={len(expected_files)} missing_files={len(missing_files)}")
+    if missing_files:
+        preview = ", ".join(str(p.name) for p in missing_files[:4])
+        suffix = " ..." if len(missing_files) > 4 else ""
+        print(f"[OBC-PHY] missing preview: {preview}{suffix}")
     if (not force) and marker.exists() and not missing_files:
         print(f"[OBC-PHY] skipped {year}-{month} e{ensemble} (marker and outputs exist)")
         return
@@ -66,7 +74,9 @@ def run_phy_obc(config: Path, year: str, month: str, ensemble: str, output_root:
         cwd=PHY_OBC_DIR,
         log_file=DEFAULT_LOG_ROOT / f"{year}_{month}_e{ensemble}_phy_obc.log",
     )
+    print(f"[OBC-PHY] finished script run for {year}-{month} e{ensemble}")
     write_marker(f"phy_obc_e{ensemble}", out_dir)
+    print(f"[OBC-PHY] wrote marker: {marker}")
 
 
 def main() -> None:
