@@ -62,6 +62,7 @@ warnings.filterwarnings("ignore")
 # ----------------------------
 def load_config(config_file):
     """Load YAML config file."""
+    print(f"[PHY-OBC] Loading config: {config_file}")
     with open(config_file, "r") as f:
         return yaml.safe_load(f)
 
@@ -127,7 +128,11 @@ def _attach_2d_lonlat(da, lon2d, lat2d, dims_expected=None, name="var"):
 # Core routine
 # ----------------------------
 def write_year(year, glorys_dir, nep_static, segments, variables, month, ensemble, fct_dir, rst_dir,
-               is_first_year=False, is_last_year=False):
+               is_first_year=False, is_last_year=False, weight_save=True):
+    print(
+        f"[PHY-OBC] ==== write_year year={year} month={month} ensemble={ensemble} "
+        f"vars={variables} segments={[s.border for s in segments]} weight_save={weight_save} ===="
+    )
 
     nt = 13
     nt_src = 12  # real source months
@@ -209,6 +214,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
         path.join(rst_dir, f"restdate_{year}{month}01/MOM_{year}{month}01.res.nc"),
         decode_cf=False
     )
+    print(f"[PHY-OBC] Loaded restart: {path.join(rst_dir, f'restdate_{year}{month}01/MOM_{year}{month}01.res.nc')}")
 
     ds_z_hind = ds_z_hind.rename({'Salt': 'so', 'Temp': 'thetao', 'u': 'uo', 'v': 'vo'})
 
@@ -218,6 +224,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     ds['vo'][0, :, :, :] = np.array(ds_z_hind['vo'][0, :, :, :])
 
     ds_sfc_hind = xr.open_dataset(path.join(glorys_dir, f"{year}0101/ocean_month.nc"))
+    print(f"[PHY-OBC] Loaded hindcast surface month: {path.join(glorys_dir, f'{year}0101/ocean_month.nc')}")
     ds['zos'][0, :, :] = np.array(ds_sfc_hind['zos'][0, :, :])
 
     ds["uo"][0] = ds["uo"][0].where(ds["uo"][0] <= 1e10, np.nan)
@@ -227,6 +234,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     # Step 3: FILL ds(time=1..11) FROM FORECAST
     # ==========================================
     fcst_hist = path.join(fct_dir, f"{year}-{month}-e{ensemble}/history")
+    print(f"[PHY-OBC] Forecast history dir: {fcst_hist}")
 
     liste_files = [
         f"oceanm_{year}_02.nc", f"oceanm_{year}_03.nc", f"oceanm_{year}_04.nc", f"oceanm_{year}_05.nc",
@@ -236,7 +244,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
 
     c = 1
     for file in liste_files:
-        print(file)
+        print(f"[PHY-OBC] Loading forecast monthly file: {file}")
         tmp_z = xr.open_dataset(path.join(fcst_hist, file))
         tmp_z = tmp_z.rename_vars({'salt': 'so', 'potT': 'thetao', 'u': 'uo', 'v': 'vo'})
 
@@ -250,6 +258,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     ds["vo"] = ds["vo"].where(ds["vo"] <= 1e10, np.nan)
 
     ds_sfc_fcst_full = xr.open_dataset(path.join(fcst_hist, "ocean_month.nc"))
+    print(f"[PHY-OBC] Loaded forecast surface month file: {path.join(fcst_hist, 'ocean_month.nc')}")
     ds_sfc_fcst = ds_sfc_fcst_full[["zos"]].isel(time=slice(1, None))
     ds['zos'][1:12, :, :] = np.array(ds_sfc_fcst['zos'][:])
 
@@ -302,17 +311,19 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     # ==========================================
 
     if "zos" in variables and "zos" in ds:
+        print("[PHY-OBC] Regridding variable group: zos")
         for seg in segments:
             print(f"{seg.border} zos")
             tracer = ds["zos"]
             print(tracer.shape)
             tracer = _attach_2d_lonlat(tracer, lonT, latT, name="zos")
             seg.regrid_tracer(
-                tracer, suffix=year, flood=False, weight_save=True,
+                tracer, suffix=year, flood=False, weight_save=weight_save,
                 time_attrs=time_attrs, time_encoding=time_encoding
             )
 
     if "uv" in variables and ("uo" in ds) and ("vo" in ds):
+        print("[PHY-OBC] Regridding variable group: uv")
         for seg in segments:
             print(f"{seg.border} uv")
             uo = ds["uo"]
@@ -322,7 +333,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
             vo = _attach_2d_lonlat(vo, lonV, latV, name="vo")
 
             seg.regrid_velocity(
-                uo, vo, suffix=year, flood=False, rotate=False, weight_save=True,
+                uo, vo, suffix=year, flood=False, rotate=False, weight_save=weight_save,
                 time_attrs=time_attrs, time_encoding=time_encoding
             )
 
@@ -331,6 +342,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
             continue
 
         if var in ds:
+            print(f"[PHY-OBC] Regridding tracer variable: {var}")
             for seg in segments:
                 print(ds[var].shape)
                 print(var)
@@ -341,7 +353,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                 tracer = _attach_2d_lonlat(tracer, lonT, latT, name=var)
                 print(tracer)
                 seg.regrid_tracer(
-                    tracer, suffix=year, flood=False, weight_save=True,
+                    tracer, suffix=year, flood=False, weight_save=weight_save,
                     time_attrs=time_attrs, time_encoding=time_encoding
                 )
         elif var in ds:
@@ -350,7 +362,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                 tracer = ds_sfc[var]
                 tracer = _attach_2d_lonlat(tracer, lonT, latT, name=var)
                 seg.regrid_tracer(
-                    tracer, suffix=year, flood=False, weight_save=True,
+                    tracer, suffix=year, flood=False, weight_save=weight_save,
                     time_attrs=time_attrs, time_encoding=time_encoding
                 )
         else:
@@ -358,6 +370,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
 
     ds.close()
     st.close()
+    print(f"[PHY-OBC] Completed year={year} month={month} ensemble={ensemble}")
 
 
 def ncrcat_years(nsegments, output_dir, variables, ncrcat_names):
@@ -373,16 +386,16 @@ def ncrcat_years(nsegments, output_dir, variables, ncrcat_names):
 def main(config_file):
     cfg = load_config(config_file)
 
-    first_year = cfg.get("first_year", 2012)
-    last_year = cfg.get("last_year", 2012)
+    first_year = int(cfg.get("first_year", 2012))
+    last_year = int(cfg.get("last_year", 2012))
 
     glorys_dir = cfg.get(
         "glorys_dir",
         "/archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_hindcast02/history/",
     )
     fct_dir = cfg.get('fct_dir', '/archive/Remi.Pages/forecast_goa/NEPbgc_fcst_dailyOB01/')
-    month = cfg.get('month', '01')
-    ensemble = cfg.get('ensemble', '01')
+    month = str(cfg.get('month', '01')).zfill(2)
+    ensemble = str(cfg.get('ensemble', '01')).zfill(2)
 
     output_dir = cfg.get("output_dir", "./outputs_CGOA_feb26")
     rst_dir = cfg.get("rst_dir", "/archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_hindcast02/restart/")
@@ -390,24 +403,32 @@ def main(config_file):
     hgrid_file = cfg.get("hgrid", "/work/Remi.Pages/GOA2p5k/GRID/CGOA_2.5k/ocean_hgrid.nc")
     ncrcat_years_flag = cfg.get("ncrcat_years", False)
     ncrcat_names = cfg.get("ncrcat_names", [])
+    weight_save = bool(cfg.get("weight_save", True))
+    regrid_dir = cfg.get("regrid_dir", output_dir)
 
     nep_static = _require(cfg, "NEP_STATIC")
     _ = cfg.get("GOA_STATIC", None)
 
     if not path.exists(output_dir):
         os.makedirs(output_dir)
+    if not path.exists(regrid_dir):
+        os.makedirs(regrid_dir)
+    print(f"[PHY-OBC] Output dir: {output_dir}")
+    print(f"[PHY-OBC] Regrid dir: {regrid_dir}")
 
     hgrid = xr.open_dataset(hgrid_file)
+    print(f"[PHY-OBC] Loaded hgrid: {hgrid_file}")
 
     variables = cfg.get("variables", [])
 
     segments = []
     for seg_cfg in cfg.get("segments", []):
-        segment = Segment(seg_cfg["id"], seg_cfg["border"], hgrid, output_dir=output_dir)
+        segment = Segment(seg_cfg["id"], seg_cfg["border"], hgrid, output_dir=output_dir, regrid_dir=regrid_dir)
         segments.append(segment)
+    print(f"[PHY-OBC] Segments configured: {[f'{s.num}:{s.border}' for s in segments]}")
 
     for y in range(first_year, last_year + 1):
-        print(y)
+        print(f"[PHY-OBC] Starting processing year={y}")
         write_year(
             y,
             glorys_dir=glorys_dir,
@@ -420,6 +441,7 @@ def main(config_file):
             rst_dir=rst_dir,
             is_first_year=(y == first_year),
             is_last_year=(y == last_year),
+            weight_save=weight_save,
         )
 
     if ncrcat_years_flag:
@@ -428,6 +450,7 @@ def main(config_file):
             "did not match the number of variables provided."
         )
         ncrcat_years(len(segments), output_dir, variables, ncrcat_names)
+        print("[PHY-OBC] Completed ncrcat yearly concatenation")
 
 
 if __name__ == "__main__":
