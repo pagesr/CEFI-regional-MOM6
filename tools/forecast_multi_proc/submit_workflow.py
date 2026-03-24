@@ -29,6 +29,38 @@ def _sbatch(cmd: list[str]) -> str:
     return job_id
 
 
+def _resolve_slurm_logs_dir(output_root: Path, requested_log_dir: str | None) -> Path:
+    """
+    Pick a writable directory for Slurm stdout/stderr files.
+
+    Priority:
+      1) --slurm-log-dir (if provided and writable)
+      2) <output-root>/logs (legacy default; if writable)
+      3) tools/forecast_multi_proc/logs (always inside workflow tree)
+    """
+    candidates: list[Path] = []
+    if requested_log_dir:
+        candidates.append(Path(requested_log_dir).expanduser())
+    else:
+        candidates.append(output_root / "logs")
+    candidates.append(THIS_DIR / "logs")
+
+    for candidate in candidates:
+        try:
+            candidate.mkdir(parents=True, exist_ok=True)
+            probe = candidate / ".write_test"
+            probe.write_text("ok\n", encoding="utf-8")
+            probe.unlink()
+            return candidate.resolve()
+        except OSError:
+            continue
+
+    raise RuntimeError(
+        "Could not find a writable Slurm log directory. "
+        "Pass --slurm-log-dir to a writable location."
+    )
+
+
 def _build_export(task_file: Path, output_root: Path, force: bool, conda_env_path: str) -> str:
     force_flag = "--force" if force else ""
     return (
@@ -48,6 +80,15 @@ def main() -> None:
     parser.add_argument("--output-root", required=True)
     parser.add_argument("--config-root", required=True)
     parser.add_argument("--task-root", default=str(DEFAULT_TASK_ROOT))
+    parser.add_argument(
+        "--slurm-log-dir",
+        default=None,
+        help=(
+            "Directory for Slurm stdout/stderr logs. "
+            "If omitted, submit_workflow tries <output-root>/logs first "
+            "and falls back to tools/forecast_multi_proc/logs if needed."
+        ),
+    )
     parser.add_argument("--max-parallel", type=int, default=20, help="Max concurrent array tasks")
     parser.add_argument(
         "--conda-env-path",
@@ -63,8 +104,8 @@ def main() -> None:
     )
     args = parser.parse_args()
     output_root = Path(args.output_root)
-    logs_dir = output_root / "logs"
-    logs_dir.mkdir(parents=True, exist_ok=True)
+    logs_dir = _resolve_slurm_logs_dir(output_root, args.slurm_log_dir)
+    print(f"[LOGS] Using Slurm log directory: {logs_dir}")
 
     files = build_task_lists(
         years=args.years,
