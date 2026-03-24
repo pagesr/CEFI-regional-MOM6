@@ -36,7 +36,7 @@ def _resolve_slurm_logs_dir(output_root: Path, requested_log_dir: str | None) ->
     Priority:
       1) --slurm-log-dir (if provided and writable)
       2) <output-root>/logs (legacy default; if writable)
-      3) tools/forecast_multi_proc/logs (always inside workflow tree)
+      3) tools/daily_forecast_multi_proc/logs (always inside workflow tree)
     """
     candidates: list[Path] = []
     if requested_log_dir:
@@ -86,7 +86,7 @@ def main() -> None:
         help=(
             "Directory for Slurm stdout/stderr logs. "
             "If omitted, submit_workflow tries <output-root>/logs first "
-            "and falls back to tools/forecast_multi_proc/logs if needed."
+            "and falls back to tools/daily_forecast_multi_proc/logs if needed."
         ),
     )
     parser.add_argument("--max-parallel", type=int, default=20, help="Max concurrent array tasks")

@@ -49,7 +49,7 @@ if [[ -z "$PYTHON_BIN" ]]; then
   fi
 fi
 
-"$PYTHON_BIN" tools/forecast_multi_proc/run_task_from_tsv.py \
+"$PYTHON_BIN" tools/daily_forecast_multi_proc/run_task_from_tsv.py \
   --stage bgc \
   --task-file "$TASK_FILE" \
   --task-id "$SLURM_ARRAY_TASK_ID" \

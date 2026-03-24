@@ -93,7 +93,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-root",
         default=str(Path(__file__).resolve().parent / "outputs"),
-        help="Root output directory (default: tools/forecast_multi_proc/outputs).",
+        help="Root output directory (default: tools/daily_forecast_multi_proc/outputs).",
     )
     parser.add_argument("--year", required=True, help="Year, e.g. 2012.")
     parser.add_argument("--month", required=True, help="Month, e.g. 01.")
@@ -111,7 +111,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--warning-file",
         default=str(Path(__file__).resolve().parent / "WARNNING.txt"),
-        help="Path for warning report file (default: tools/forecast_multi_proc/WARNNING.txt).",
+        help="Path for warning report file (default: tools/daily_forecast_multi_proc/WARNNING.txt).",
     )
     return parser.parse_args()
 

@@ -3,6 +3,7 @@ GOA_STATIC: "{GOA_STATIC}"
 NEP_STATIC: "{NEP_STATIC}"
 NEP_RESTART_DIR: "{NEP_RESTART_DIR}"
 reuse_weights: true
+REGRID_DIR: "{REGRID_IC_BGC_ROOT}"
 regrid_tracer_weights: regrid_bilin_bgc.nc
 tracer_method: nearest_s2d
 OUT_IC: "{IC_ROOT}/ic_bgc_{YEAR}{MONTH}01.nc"

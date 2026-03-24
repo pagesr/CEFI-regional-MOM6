@@ -39,6 +39,14 @@ REGRID_DIR = config.get("REGRID_DIR", ".")
 os.makedirs(REGRID_DIR, exist_ok=True)
 
 
+def _reuse_if_exists(weight_file: str) -> bool:
+    reuse_requested = bool(config.get("reuse_weights", True))
+    exists = os.path.exists(weight_file)
+    if reuse_requested and not exists:
+        print(f"[IC-BGC] Regrid weights not found; creating new file: {weight_file}")
+    return reuse_requested and exists
+
+
 def regrid_tracer(fld, method="bilinear"):
     coords = xr.open_dataset(GOA_STATIC)
     coords = coords.rename({"geolon": "lon", "geolat": "lat"})  # interp on this
@@ -53,7 +61,7 @@ def regrid_tracer(fld, method="bilinear"):
         method=method,
         periodic=False,
         filename=weight_file,
-        reuse_weights=config.get("reuse_weights", True),
+        reuse_weights=_reuse_if_exists(weight_file),
     )
     tdest = regrid(fld)
     return tdest
