@@ -28,9 +28,11 @@ Data sources used here
 2) Forecast (t = 1..11)
    - SSH (zos) comes from:
        forecast history/ocean_month.nc  (we drop the first time because t=0 is hindcast)
-   - 3D fields (T, S, U, V) come from monthly forecast files:
-       forecast history/oceanm_YYYY_02.nc ... oceanm_YYYY_12.nc
-     (each file contains a single monthly time)
+   - 3D fields (T, S, U, V) come from monthly forecast files beginning at
+     the month after the configured start month (with year rollover), for
+     11 files total.
+     Example for month=04:
+       oceanm_YYYY_05.nc ... oceanm_YYYY_12.nc, oceanm_(YYYY+1)_01.nc ... _03.nc
 
 3) Padding (t = 12)
    - Last time step is duplicated from t = 11 for all variables
@@ -250,11 +252,13 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     fcst_hist = path.join(fct_dir, f"{year}-{month}-e{ensemble}/history")
     print(f"[PHY-OBC] Forecast history dir: {fcst_hist}")
 
-    liste_files = [
-        f"oceanm_{year}_02.nc", f"oceanm_{year}_03.nc", f"oceanm_{year}_04.nc", f"oceanm_{year}_05.nc",
-        f"oceanm_{year}_06.nc", f"oceanm_{year}_07.nc", f"oceanm_{year}_08.nc", f"oceanm_{year}_09.nc",
-        f"oceanm_{year}_10.nc", f"oceanm_{year}_11.nc", f"oceanm_{year}_12.nc"
-    ]
+    # Build the next 11 forecast monthly files relative to the configured start month.
+    # This supports starts other than January (e.g., month=04).
+    start_ts = pd.Timestamp(int(year), int(month), 1)
+    liste_files = []
+    for offset in range(1, 12):
+        tgt = start_ts + pd.DateOffset(months=offset)
+        liste_files.append(f"oceanm_{tgt.year}_{tgt.month:02d}.nc")
 
     c = 1
     for file in liste_files:
