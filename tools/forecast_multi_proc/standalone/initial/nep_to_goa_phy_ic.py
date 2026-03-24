@@ -51,6 +51,16 @@ def _reuse_if_exists(weight_file: str) -> bool:
         print(f"[IC-PHY] Regrid weights not found; creating new file: {weight_file}")
     return reuse_requested and exists
 
+
+def _all_finite_values_zero(da) -> bool:
+    arr = np.asarray(da.values)
+    if arr.size == 0:
+        return False
+    finite = np.isfinite(arr)
+    if not finite.any():
+        return False
+    return np.all(arr[finite] == 0.0)
+
 def regrid_tracer(fld, method='bilinear'):
     coords = xr.open_dataset(GOA_STATIC)
     coords = coords.rename({'geolon': 'lon', 'geolat': 'lat'})  # interp on this 
@@ -94,14 +104,43 @@ def regrid_v(fld, method="bilinear"):
     gsource = gsource.rename({"geolon_v": "lon", "geolat_v": "lat"})
 
     weight_file = _weight_file(config.get("regrid_v_weights", "regrid_bilin_vv.nc"))
+    reuse_v = _reuse_if_exists(weight_file)
+
+    # Guard against stale/corrupt tiny v-weights that can yield near-all-zero output.
+    min_v_weight_bytes = int(config.get("min_v_weight_size_bytes", 50000))
+    if reuse_v and os.path.getsize(weight_file) < min_v_weight_bytes:
+        print(
+            f"[IC-PHY] Existing v-weight file looks too small "
+            f"({os.path.getsize(weight_file)} bytes): {weight_file}. Rebuilding."
+        )
+        reuse_v = False
+
     regrid = xesmf.Regridder(
         gsource, coords,
         method=method,
         periodic=False,
         filename=weight_file,
-        reuse_weights=_reuse_if_exists(weight_file),
+        reuse_weights=reuse_v,
     )
-    return regrid(fld)
+    vdest = regrid(fld)
+
+    if _all_finite_values_zero(vdest):
+        print(
+            "[IC-PHY] WARNING: regridded v is all finite zeros. "
+            "Removing v weights and retrying once."
+        )
+        if os.path.exists(weight_file):
+            os.remove(weight_file)
+        regrid_retry = xesmf.Regridder(
+            gsource, coords,
+            method=method,
+            periodic=False,
+            filename=weight_file,
+            reuse_weights=False,
+        )
+        vdest = regrid_retry(fld)
+
+    return vdest
 
 
 # Use the functions
