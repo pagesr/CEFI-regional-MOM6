@@ -10,7 +10,9 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROC_DIR="${PROC_DIR:-$SCRIPT_DIR}"
+# Under Slurm, the script may execute from a spool copy path. Prefer the
+# original submission directory when available.
+PROC_DIR="${PROC_DIR:-${SLURM_SUBMIT_DIR:-$SCRIPT_DIR}}"
 
 # Optional override; by default we use the task-list in this directory.
 TASK_LIST="${TASK_LIST:-$PROC_DIR/bgc_obc_postprocess_tasks.txt}"
