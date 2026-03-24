@@ -25,15 +25,20 @@ Data sources used here
    - Surface SSH (zos) for t = 0 is taken from the NEP hindcast monthly output:
        ocean_month.nc
 
-2) Forecast (t = 1..11)
-   - SSH (zos) comes from:
-       forecast history/ocean_month.nc  (we drop the first time because t=0 is hindcast)
-   - 3D fields (T, S, U, V) come from monthly forecast files:
+2) Forecast
+   - SSH (zos) now comes from daily fields:
+       hindcast history/ocean_daily.nc (day-0 only) +
+       forecast history/ocean_daily.nc (day-1 onward)
+     using variable `ssh` (renamed to zos in output workflow).
+   - 3D fields (T, S, U, V) source still comes from monthly files:
        forecast history/oceanm_YYYY_02.nc ... oceanm_YYYY_12.nc
-     (each file contains a single monthly time)
+     (each file contains a single monthly time).
+   - U/V OBC are upgraded to daily by time-interpolating these monthly 3D U/V
+     fields onto the daily zos timeline.
 
-3) Padding (t = 12)
-   - Last time step is duplicated from t = 11 for all variables
+3) Padding
+   - Keep one extra padded time step at the end (duplicate of last available step)
+     so downstream model runs do not crash.
 
 Run
 ---
@@ -148,8 +153,8 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
         f"vars={variables} segments={[s.border for s in segments]} weight_save={weight_save} ===="
     )
 
-    nt = 13
-    nt_src = 12  # real source months
+    nt = 13  # monthly-style vars (so/thetao): 12 real + 1 padded
+    nt_src = 12  # real source months for so/thetao and monthly u/v source
     nz = 75
     ny = 816
     nx = 342
@@ -159,7 +164,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     nnv = 2
 
     # -------------------------
-    # BUILD CF TIME + BOUNDS
+    # BUILD MONTHLY TIME + BOUNDS (for so/thetao)
     # -------------------------
     ref = pd.Timestamp(year=int(year), month=int(month), day=1)
 
@@ -234,12 +239,8 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
 
     ds['so'][0, :, :, :] = np.array(ds_z_hind['so'][0, :, :, :])
     ds['thetao'][0, :, :, :] = np.array(ds_z_hind['thetao'][0, :, :, :])
-    ds['uo'][0, :, :, :] = np.array(ds_z_hind['uo'][0, :, :, :])
-    ds['vo'][0, :, :, :] = np.array(ds_z_hind['vo'][0, :, :, :])
-
-    ds_sfc_hind = xr.open_dataset(path.join(glorys_dir, f"{year}0101/ocean_month.nc"))
-    print(f"[PHY-OBC] Loaded hindcast surface month: {path.join(glorys_dir, f'{year}0101/ocean_month.nc')}")
-    ds['zos'][0, :, :] = np.array(ds_sfc_hind['zos'][0, :, :])
+    ds['uo'][0, :, :, :] = np.array(ds_z_hind['uo'][0, :, :, :])  # monthly source for daily interpolation
+    ds['vo'][0, :, :, :] = np.array(ds_z_hind['vo'][0, :, :, :])  # monthly source for daily interpolation
 
     ds["uo"][0] = ds["uo"][0].where(ds["uo"][0] <= 1e10, np.nan)
     ds["vo"][0] = ds["vo"][0].where(ds["vo"][0] <= 1e10, np.nan)
@@ -271,27 +272,77 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     ds["uo"] = ds["uo"].where(ds["uo"] <= 1e10, np.nan)
     ds["vo"] = ds["vo"].where(ds["vo"] <= 1e10, np.nan)
 
-    ds_sfc_fcst_full = xr.open_dataset(path.join(fcst_hist, "ocean_month.nc"))
-    print(f"[PHY-OBC] Loaded forecast surface month file: {path.join(fcst_hist, 'ocean_month.nc')}")
-    ds_sfc_fcst = ds_sfc_fcst_full[["zos"]].isel(time=slice(1, None))
-    ds['zos'][1:12, :, :] = np.array(ds_sfc_fcst['zos'][:])
+    # ------------------------------------------
+    # Step 3a: Build DAILY zos from ocean_daily.nc (ssh)
+    # ------------------------------------------
+    hind_daily_path = path.join(glorys_dir, f"{year}0101/ocean_daily.nc")
+    fcst_daily_path = path.join(fcst_hist, "ocean_daily.nc")
+    ds_sfc_hind_daily = xr.open_dataset(hind_daily_path)
+    ds_sfc_fcst_daily = xr.open_dataset(fcst_daily_path)
+    print(f"[PHY-OBC] Loaded hindcast daily SSH file: {hind_daily_path}")
+    print(f"[PHY-OBC] Loaded forecast daily SSH file: {fcst_daily_path}")
 
-    # Apply NaN mask from a reference forecast month onto t=0
+    if "ssh" not in ds_sfc_hind_daily or "ssh" not in ds_sfc_fcst_daily:
+        raise ValueError("Expected variable 'ssh' in ocean_daily.nc for hindcast and forecast.")
+
+    # Keep hindcast day-0 and forecast from day-1 onward to avoid duplicate start day.
+    zos_daily_real = xr.concat(
+        [ds_sfc_hind_daily["ssh"].isel(time=slice(0, 1)), ds_sfc_fcst_daily["ssh"].isel(time=slice(1, None))],
+        dim="time",
+    )
+
+    # Daily target timeline for one forecast year + required extra padded step.
+    daily_start = ref
+    daily_end_exclusive = ref + pd.DateOffset(years=1)
+    daily_real_times = pd.date_range(daily_start, daily_end_exclusive, freq="D", inclusive="left")
+    ndaily_real = len(daily_real_times)
+
+    if zos_daily_real.sizes["time"] < ndaily_real:
+        raise ValueError(
+            f"Not enough daily ssh records: have {zos_daily_real.sizes['time']} need at least {ndaily_real}."
+        )
+    if zos_daily_real.sizes["time"] > ndaily_real:
+        print(
+            f"[PHY-OBC] WARNING: daily ssh has {zos_daily_real.sizes['time']} steps; "
+            f"trimming to {ndaily_real}."
+        )
+        zos_daily_real = zos_daily_real.isel(time=slice(0, ndaily_real))
+
+    daily_days_real = ((daily_real_times - ref) / np.timedelta64(1, "D")).to_numpy(dtype="float64")
+    daily_days_full = np.concatenate([daily_days_real, [daily_days_real[-1] + 1.0]])
+    print(f"[PHY-OBC] Daily timeline: {len(daily_days_real)} real steps + 1 padded = {len(daily_days_full)}")
+
+    zos_daily_real = zos_daily_real.assign_coords(time=("time", daily_days_real))
+    zos_padded_last = zos_daily_real.isel(time=-1).expand_dims(time=[daily_days_full[-1]])
+    zos_daily = xr.concat([zos_daily_real, zos_padded_last], dim="time").rename("zos")
+
+    # ------------------------------------------
+    # Step 3b: Build DAILY u/v by time-interpolating MONTHLY 3D u/v source
+    # ------------------------------------------
+    monthly_source_days = ((pd.date_range(ref, periods=nt_src, freq="MS") - ref) / np.timedelta64(1, "D")).to_numpy(
+        dtype="float64"
+    )
+    uo_monthly = ds["uo"].isel(time=slice(0, nt_src)).assign_coords(time=("time", monthly_source_days))
+    vo_monthly = ds["vo"].isel(time=slice(0, nt_src)).assign_coords(time=("time", monthly_source_days))
+
+    uo_daily_real = uo_monthly.interp(time=daily_days_real)
+    vo_daily_real = vo_monthly.interp(time=daily_days_real)
+    uo_daily = xr.concat([uo_daily_real, uo_daily_real.isel(time=-1).expand_dims(time=[daily_days_full[-1]])], dim="time")
+    vo_daily = xr.concat([vo_daily_real, vo_daily_real.isel(time=-1).expand_dims(time=[daily_days_full[-1]])], dim="time")
+    uo_daily.name = "uo"
+    vo_daily.name = "vo"
+
+    # Apply NaN mask from a reference forecast month onto t=0 for monthly tracers
     ds["vo"][0] = ds["vo"][0].where(~ds["vo"].isel(time=8).isnull())
     ds["uo"][0] = ds["uo"][0].where(~ds["uo"].isel(time=8).isnull())
-    ds["zos"][0] = ds["zos"][0].where(~ds["zos"].isel(time=8).isnull())
     ds["thetao"][0] = ds["thetao"][0].where(~ds["thetao"].isel(time=8).isnull())
     ds["so"][0] = ds["so"][0].where(~ds["so"].isel(time=8).isnull())
-
+    
     # ==========================================
-    # Step 3b: PAD EXTRA LAST TIME STEP
+    # Step 3c: PAD EXTRA LAST TIME STEP (monthly tracers)
     # ==========================================
-    # Duplicate the final available month into the new extra slot
-    ds["zos"][12, :, :] = ds["zos"][11, :, :]
     ds["so"][12, :, :, :] = ds["so"][11, :, :, :]
     ds["thetao"][12, :, :, :] = ds["thetao"][11, :, :, :]
-    ds["uo"][12, :, :, :] = ds["uo"][11, :, :, :]
-    ds["vo"][12, :, :, :] = ds["vo"][11, :, :, :]
 
     # ==========================================
     # Step 4: Load NEP static grid (2D lon/lat)
@@ -324,11 +375,11 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     # Step 5: Regrid and write OBC per segment
     # ==========================================
 
-    if "zos" in variables and "zos" in ds:
+    if "zos" in variables:
         print("[PHY-OBC] Regridding variable group: zos")
         for seg in segments:
             print(f"{seg.border} zos")
-            tracer = ds["zos"]
+            tracer = zos_daily
             print(tracer.shape)
             tracer = _attach_2d_lonlat(tracer, lonT, latT, name="zos")
             out = seg.regrid_tracer(
@@ -344,12 +395,12 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                     time_attrs=time_attrs, time_encoding=time_encoding
                 )
 
-    if "uv" in variables and ("uo" in ds) and ("vo" in ds):
+    if "uv" in variables:
         print("[PHY-OBC] Regridding variable group: uv")
         for seg in segments:
             print(f"{seg.border} uv")
-            uo = ds["uo"]
-            vo = ds["vo"]
+            uo = uo_daily
+            vo = vo_daily
 
             uo = _attach_2d_lonlat(uo, lonU, latU, name="uo")
             vo = _attach_2d_lonlat(vo, lonV, latV, name="vo")
@@ -423,6 +474,8 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
             raise ValueError(f"{var} not found in datasets for year={year}")
 
     ds.close()
+    ds_sfc_hind_daily.close()
+    ds_sfc_fcst_daily.close()
     st.close()
     print(f"[PHY-OBC] Completed year={year} month={month} ensemble={ensemble}")
 

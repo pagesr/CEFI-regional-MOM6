@@ -78,3 +78,7 @@ python tools/forecast_multi_proc/submit_workflow.py \
 - To scan PHY/BGC OBC `.nc` outputs for all-zero variables/files and write a report, run:
   `python tools/forecast_multi_proc/check_obc_all_zero.py --year 2012 --month 01 --ensemble 03`
   (report is written to `tools/forecast_multi_proc/WARNNING.txt` by default).
+- Daily PHY OBC mode currently uses:
+  - `ssh` from `ocean_daily.nc` to build daily `zos`,
+  - daily `u/v` obtained by time-interpolating monthly 3D `u/v`,
+  - one extra padded final daily time step to avoid model crash at run end.
