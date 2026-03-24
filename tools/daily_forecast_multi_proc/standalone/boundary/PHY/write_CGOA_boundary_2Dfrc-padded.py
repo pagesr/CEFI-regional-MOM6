@@ -25,15 +25,20 @@ Data sources used here
    - Surface SSH (zos) for t = 0 is taken from the NEP hindcast monthly output:
        ocean_month.nc
 
-2) Forecast (t = 1..11)
-   - SSH (zos) comes from:
-       forecast history/ocean_month.nc  (we drop the first time because t=0 is hindcast)
-   - 3D fields (T, S, U, V) come from monthly forecast files:
+2) Forecast
+   - SSH (zos) now comes from daily fields:
+       hindcast history/ocean_daily.nc (day-0 only) +
+       forecast history/ocean_daily.nc (day-1 onward)
+     using variable `ssh` (renamed to zos in output workflow).
+   - 3D fields (T, S, U, V) source still comes from monthly files:
        forecast history/oceanm_YYYY_02.nc ... oceanm_YYYY_12.nc
-     (each file contains a single monthly time)
+     (each file contains a single monthly time).
+   - U/V OBC are upgraded to daily by time-interpolating these monthly 3D U/V
+     fields onto the daily zos timeline.
 
-3) Padding (t = 12)
-   - Last time step is duplicated from t = 11 for all variables
+3) Padding
+   - Keep one extra padded time step at the end (duplicate of last available step)
+     so downstream model runs do not crash.
 
 Run
 ---
@@ -62,6 +67,7 @@ warnings.filterwarnings("ignore")
 # ----------------------------
 def load_config(config_file):
     """Load YAML config file."""
+    print(f"[PHY-OBC] Loading config: {config_file}")
     with open(config_file, "r") as f:
         return yaml.safe_load(f)
 
@@ -123,14 +129,32 @@ def _attach_2d_lonlat(da, lon2d, lat2d, dims_expected=None, name="var"):
     return da
 
 
+def _all_finite_values_zero(da, atol=1e-14):
+    vals = np.asarray(da.values)
+    finite = np.isfinite(vals)
+    if not finite.any():
+        return False
+    return np.all(np.abs(vals[finite]) <= atol)
+
+
+def _remove_if_exists(filepath):
+    if path.exists(filepath):
+        os.remove(filepath)
+        print(f"[PHY-OBC] Removed stale weight file: {filepath}")
+
+
 # ----------------------------
 # Core routine
 # ----------------------------
 def write_year(year, glorys_dir, nep_static, segments, variables, month, ensemble, fct_dir, rst_dir,
-               is_first_year=False, is_last_year=False):
+               is_first_year=False, is_last_year=False, weight_save=True):
+    print(
+        f"[PHY-OBC] ==== write_year year={year} month={month} ensemble={ensemble} "
+        f"vars={variables} segments={[s.border for s in segments]} weight_save={weight_save} ===="
+    )
 
-    nt = 13
-    nt_src = 12  # real source months
+    nt = 13  # monthly-style vars (so/thetao): 12 real + 1 padded
+    nt_src = 12  # real source months for so/thetao and monthly u/v source
     nz = 75
     ny = 816
     nx = 342
@@ -140,7 +164,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     nnv = 2
 
     # -------------------------
-    # BUILD CF TIME + BOUNDS
+    # BUILD MONTHLY TIME + BOUNDS (for so/thetao)
     # -------------------------
     ref = pd.Timestamp(year=int(year), month=int(month), day=1)
 
@@ -209,16 +233,14 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
         path.join(rst_dir, f"restdate_{year}{month}01/MOM_{year}{month}01.res.nc"),
         decode_cf=False
     )
+    print(f"[PHY-OBC] Loaded restart: {path.join(rst_dir, f'restdate_{year}{month}01/MOM_{year}{month}01.res.nc')}")
 
     ds_z_hind = ds_z_hind.rename({'Salt': 'so', 'Temp': 'thetao', 'u': 'uo', 'v': 'vo'})
 
     ds['so'][0, :, :, :] = np.array(ds_z_hind['so'][0, :, :, :])
     ds['thetao'][0, :, :, :] = np.array(ds_z_hind['thetao'][0, :, :, :])
-    ds['uo'][0, :, :, :] = np.array(ds_z_hind['uo'][0, :, :, :])
-    ds['vo'][0, :, :, :] = np.array(ds_z_hind['vo'][0, :, :, :])
-
-    ds_sfc_hind = xr.open_dataset(path.join(glorys_dir, f"{year}0101/ocean_month.nc"))
-    ds['zos'][0, :, :] = np.array(ds_sfc_hind['zos'][0, :, :])
+    ds['uo'][0, :, :, :] = np.array(ds_z_hind['uo'][0, :, :, :])  # monthly source for daily interpolation
+    ds['vo'][0, :, :, :] = np.array(ds_z_hind['vo'][0, :, :, :])  # monthly source for daily interpolation
 
     ds["uo"][0] = ds["uo"][0].where(ds["uo"][0] <= 1e10, np.nan)
     ds["vo"][0] = ds["vo"][0].where(ds["vo"][0] <= 1e10, np.nan)
@@ -227,6 +249,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     # Step 3: FILL ds(time=1..11) FROM FORECAST
     # ==========================================
     fcst_hist = path.join(fct_dir, f"{year}-{month}-e{ensemble}/history")
+    print(f"[PHY-OBC] Forecast history dir: {fcst_hist}")
 
     liste_files = [
         f"oceanm_{year}_02.nc", f"oceanm_{year}_03.nc", f"oceanm_{year}_04.nc", f"oceanm_{year}_05.nc",
@@ -236,7 +259,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
 
     c = 1
     for file in liste_files:
-        print(file)
+        print(f"[PHY-OBC] Loading forecast monthly file: {file}")
         tmp_z = xr.open_dataset(path.join(fcst_hist, file))
         tmp_z = tmp_z.rename_vars({'salt': 'so', 'potT': 'thetao', 'u': 'uo', 'v': 'vo'})
 
@@ -249,26 +272,77 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     ds["uo"] = ds["uo"].where(ds["uo"] <= 1e10, np.nan)
     ds["vo"] = ds["vo"].where(ds["vo"] <= 1e10, np.nan)
 
-    ds_sfc_fcst_full = xr.open_dataset(path.join(fcst_hist, "ocean_month.nc"))
-    ds_sfc_fcst = ds_sfc_fcst_full[["zos"]].isel(time=slice(1, None))
-    ds['zos'][1:12, :, :] = np.array(ds_sfc_fcst['zos'][:])
+    # ------------------------------------------
+    # Step 3a: Build DAILY zos from ocean_daily.nc (ssh)
+    # ------------------------------------------
+    hind_daily_path = path.join(glorys_dir, f"{year}0101/ocean_daily.nc")
+    fcst_daily_path = path.join(fcst_hist, "ocean_daily.nc")
+    ds_sfc_hind_daily = xr.open_dataset(hind_daily_path)
+    ds_sfc_fcst_daily = xr.open_dataset(fcst_daily_path)
+    print(f"[PHY-OBC] Loaded hindcast daily SSH file: {hind_daily_path}")
+    print(f"[PHY-OBC] Loaded forecast daily SSH file: {fcst_daily_path}")
 
-    # Apply NaN mask from a reference forecast month onto t=0
+    if "ssh" not in ds_sfc_hind_daily or "ssh" not in ds_sfc_fcst_daily:
+        raise ValueError("Expected variable 'ssh' in ocean_daily.nc for hindcast and forecast.")
+
+    # Keep hindcast day-0 and forecast from day-1 onward to avoid duplicate start day.
+    zos_daily_real = xr.concat(
+        [ds_sfc_hind_daily["ssh"].isel(time=slice(0, 1)), ds_sfc_fcst_daily["ssh"].isel(time=slice(1, None))],
+        dim="time",
+    )
+
+    # Daily target timeline for one forecast year + required extra padded step.
+    daily_start = ref
+    daily_end_exclusive = ref + pd.DateOffset(years=1)
+    daily_real_times = pd.date_range(daily_start, daily_end_exclusive, freq="D", inclusive="left")
+    ndaily_real = len(daily_real_times)
+
+    if zos_daily_real.sizes["time"] < ndaily_real:
+        raise ValueError(
+            f"Not enough daily ssh records: have {zos_daily_real.sizes['time']} need at least {ndaily_real}."
+        )
+    if zos_daily_real.sizes["time"] > ndaily_real:
+        print(
+            f"[PHY-OBC] WARNING: daily ssh has {zos_daily_real.sizes['time']} steps; "
+            f"trimming to {ndaily_real}."
+        )
+        zos_daily_real = zos_daily_real.isel(time=slice(0, ndaily_real))
+
+    daily_days_real = ((daily_real_times - ref) / np.timedelta64(1, "D")).to_numpy(dtype="float64")
+    daily_days_full = np.concatenate([daily_days_real, [daily_days_real[-1] + 1.0]])
+    print(f"[PHY-OBC] Daily timeline: {len(daily_days_real)} real steps + 1 padded = {len(daily_days_full)}")
+
+    zos_daily_real = zos_daily_real.assign_coords(time=("time", daily_days_real))
+    zos_padded_last = zos_daily_real.isel(time=-1).expand_dims(time=[daily_days_full[-1]])
+    zos_daily = xr.concat([zos_daily_real, zos_padded_last], dim="time").rename("zos")
+
+    # ------------------------------------------
+    # Step 3b: Build DAILY u/v by time-interpolating MONTHLY 3D u/v source
+    # ------------------------------------------
+    monthly_source_days = ((pd.date_range(ref, periods=nt_src, freq="MS") - ref) / np.timedelta64(1, "D")).to_numpy(
+        dtype="float64"
+    )
+    uo_monthly = ds["uo"].isel(time=slice(0, nt_src)).assign_coords(time=("time", monthly_source_days))
+    vo_monthly = ds["vo"].isel(time=slice(0, nt_src)).assign_coords(time=("time", monthly_source_days))
+
+    uo_daily_real = uo_monthly.interp(time=daily_days_real)
+    vo_daily_real = vo_monthly.interp(time=daily_days_real)
+    uo_daily = xr.concat([uo_daily_real, uo_daily_real.isel(time=-1).expand_dims(time=[daily_days_full[-1]])], dim="time")
+    vo_daily = xr.concat([vo_daily_real, vo_daily_real.isel(time=-1).expand_dims(time=[daily_days_full[-1]])], dim="time")
+    uo_daily.name = "uo"
+    vo_daily.name = "vo"
+
+    # Apply NaN mask from a reference forecast month onto t=0 for monthly tracers
     ds["vo"][0] = ds["vo"][0].where(~ds["vo"].isel(time=8).isnull())
     ds["uo"][0] = ds["uo"][0].where(~ds["uo"].isel(time=8).isnull())
-    ds["zos"][0] = ds["zos"][0].where(~ds["zos"].isel(time=8).isnull())
     ds["thetao"][0] = ds["thetao"][0].where(~ds["thetao"].isel(time=8).isnull())
     ds["so"][0] = ds["so"][0].where(~ds["so"].isel(time=8).isnull())
-
+    
     # ==========================================
-    # Step 3b: PAD EXTRA LAST TIME STEP
+    # Step 3c: PAD EXTRA LAST TIME STEP (monthly tracers)
     # ==========================================
-    # Duplicate the final available month into the new extra slot
-    ds["zos"][12, :, :] = ds["zos"][11, :, :]
     ds["so"][12, :, :, :] = ds["so"][11, :, :, :]
     ds["thetao"][12, :, :, :] = ds["thetao"][11, :, :, :]
-    ds["uo"][12, :, :, :] = ds["uo"][11, :, :, :]
-    ds["vo"][12, :, :, :] = ds["vo"][11, :, :, :]
 
     # ==========================================
     # Step 4: Load NEP static grid (2D lon/lat)
@@ -301,36 +375,63 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     # Step 5: Regrid and write OBC per segment
     # ==========================================
 
-    if "zos" in variables and "zos" in ds:
+    if "zos" in variables:
+        print("[PHY-OBC] Regridding variable group: zos")
         for seg in segments:
             print(f"{seg.border} zos")
-            tracer = ds["zos"]
+            tracer = zos_daily
             print(tracer.shape)
             tracer = _attach_2d_lonlat(tracer, lonT, latT, name="zos")
-            seg.regrid_tracer(
-                tracer, suffix=year, flood=False, weight_save=True,
+            out = seg.regrid_tracer(
+                tracer, suffix=year, flood=False, weight_save=weight_save,
                 time_attrs=time_attrs, time_encoding=time_encoding
             )
+            zkey = f"zos_{seg.segstr}"
+            if zkey in out and _all_finite_values_zero(out[zkey]):
+                print(f"[PHY-OBC] WARNING: {zkey} is all zeros. Regenerating tracer weights and retrying once.")
+                _remove_if_exists(path.join(seg.regrid_dir, f"regrid_{seg.segstr}_t.nc"))
+                seg.regrid_tracer(
+                    tracer, suffix=year, flood=False, weight_save=weight_save,
+                    time_attrs=time_attrs, time_encoding=time_encoding
+                )
 
-    if "uv" in variables and ("uo" in ds) and ("vo" in ds):
+    if "uv" in variables:
+        print("[PHY-OBC] Regridding variable group: uv")
         for seg in segments:
             print(f"{seg.border} uv")
-            uo = ds["uo"]
-            vo = ds["vo"]
+            uo = uo_daily
+            vo = vo_daily
 
             uo = _attach_2d_lonlat(uo, lonU, latU, name="uo")
             vo = _attach_2d_lonlat(vo, lonV, latV, name="vo")
 
-            seg.regrid_velocity(
-                uo, vo, suffix=year, flood=False, rotate=False, weight_save=True,
+            out_uv = seg.regrid_velocity(
+                uo, vo, suffix=year, flood=False, rotate=False, weight_save=weight_save,
                 time_attrs=time_attrs, time_encoding=time_encoding
             )
+            ukey = f"u_{seg.segstr}"
+            vkey = f"v_{seg.segstr}"
+            bad_u = ukey in out_uv and _all_finite_values_zero(out_uv[ukey])
+            bad_v = vkey in out_uv and _all_finite_values_zero(out_uv[vkey])
+            if bad_u or bad_v:
+                print(
+                    f"[PHY-OBC] WARNING: {seg.border} uv output has all-zero component(s): "
+                    f"{'u' if bad_u else ''}{' and ' if (bad_u and bad_v) else ''}{'v' if bad_v else ''}. "
+                    "Regenerating UV weights and retrying once."
+                )
+                _remove_if_exists(path.join(seg.regrid_dir, f"regrid_{seg.segstr}_u.nc"))
+                _remove_if_exists(path.join(seg.regrid_dir, f"regrid_{seg.segstr}_v.nc"))
+                seg.regrid_velocity(
+                    uo, vo, suffix=year, flood=False, rotate=False, weight_save=weight_save,
+                    time_attrs=time_attrs, time_encoding=time_encoding
+                )
 
     for var in variables:
         if var in ["zos", "uv"]:
             continue
 
         if var in ds:
+            print(f"[PHY-OBC] Regridding tracer variable: {var}")
             for seg in segments:
                 print(ds[var].shape)
                 print(var)
@@ -340,24 +441,43 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                 tracer = ds[var]
                 tracer = _attach_2d_lonlat(tracer, lonT, latT, name=var)
                 print(tracer)
-                seg.regrid_tracer(
-                    tracer, suffix=year, flood=False, weight_save=True,
+                out = seg.regrid_tracer(
+                    tracer, suffix=year, flood=False, weight_save=weight_save,
                     time_attrs=time_attrs, time_encoding=time_encoding
                 )
+                tkey = f"{var}_{seg.segstr}"
+                if tkey in out and _all_finite_values_zero(out[tkey]):
+                    print(f"[PHY-OBC] WARNING: {tkey} is all zeros. Regenerating tracer weights and retrying once.")
+                    _remove_if_exists(path.join(seg.regrid_dir, f"regrid_{seg.segstr}_t.nc"))
+                    seg.regrid_tracer(
+                        tracer, suffix=year, flood=False, weight_save=weight_save,
+                        time_attrs=time_attrs, time_encoding=time_encoding
+                    )
         elif var in ds:
             for seg in segments:
                 print(f"{seg.border} {var} (from ocean_month.nc)")
                 tracer = ds_sfc[var]
                 tracer = _attach_2d_lonlat(tracer, lonT, latT, name=var)
-                seg.regrid_tracer(
-                    tracer, suffix=year, flood=False, weight_save=True,
+                out = seg.regrid_tracer(
+                    tracer, suffix=year, flood=False, weight_save=weight_save,
                     time_attrs=time_attrs, time_encoding=time_encoding
                 )
+                tkey = f"{var}_{seg.segstr}"
+                if tkey in out and _all_finite_values_zero(out[tkey]):
+                    print(f"[PHY-OBC] WARNING: {tkey} is all zeros. Regenerating tracer weights and retrying once.")
+                    _remove_if_exists(path.join(seg.regrid_dir, f"regrid_{seg.segstr}_t.nc"))
+                    seg.regrid_tracer(
+                        tracer, suffix=year, flood=False, weight_save=weight_save,
+                        time_attrs=time_attrs, time_encoding=time_encoding
+                    )
         else:
             raise ValueError(f"{var} not found in datasets for year={year}")
 
     ds.close()
+    ds_sfc_hind_daily.close()
+    ds_sfc_fcst_daily.close()
     st.close()
+    print(f"[PHY-OBC] Completed year={year} month={month} ensemble={ensemble}")
 
 
 def ncrcat_years(nsegments, output_dir, variables, ncrcat_names):
@@ -373,16 +493,16 @@ def ncrcat_years(nsegments, output_dir, variables, ncrcat_names):
 def main(config_file):
     cfg = load_config(config_file)
 
-    first_year = cfg.get("first_year", 2012)
-    last_year = cfg.get("last_year", 2012)
+    first_year = int(cfg.get("first_year", 2012))
+    last_year = int(cfg.get("last_year", 2012))
 
     glorys_dir = cfg.get(
         "glorys_dir",
         "/archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_hindcast02/history/",
     )
     fct_dir = cfg.get('fct_dir', '/archive/Remi.Pages/forecast_goa/NEPbgc_fcst_dailyOB01/')
-    month = cfg.get('month', '01')
-    ensemble = cfg.get('ensemble', '01')
+    month = str(cfg.get('month', '01')).zfill(2)
+    ensemble = str(cfg.get('ensemble', '01')).zfill(2)
 
     output_dir = cfg.get("output_dir", "./outputs_CGOA_feb26")
     rst_dir = cfg.get("rst_dir", "/archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_hindcast02/restart/")
@@ -390,24 +510,32 @@ def main(config_file):
     hgrid_file = cfg.get("hgrid", "/work/Remi.Pages/GOA2p5k/GRID/CGOA_2.5k/ocean_hgrid.nc")
     ncrcat_years_flag = cfg.get("ncrcat_years", False)
     ncrcat_names = cfg.get("ncrcat_names", [])
+    weight_save = bool(cfg.get("weight_save", True))
+    regrid_dir = cfg.get("regrid_dir", output_dir)
 
     nep_static = _require(cfg, "NEP_STATIC")
     _ = cfg.get("GOA_STATIC", None)
 
     if not path.exists(output_dir):
         os.makedirs(output_dir)
+    if not path.exists(regrid_dir):
+        os.makedirs(regrid_dir)
+    print(f"[PHY-OBC] Output dir: {output_dir}")
+    print(f"[PHY-OBC] Regrid dir: {regrid_dir}")
 
     hgrid = xr.open_dataset(hgrid_file)
+    print(f"[PHY-OBC] Loaded hgrid: {hgrid_file}")
 
     variables = cfg.get("variables", [])
 
     segments = []
     for seg_cfg in cfg.get("segments", []):
-        segment = Segment(seg_cfg["id"], seg_cfg["border"], hgrid, output_dir=output_dir)
+        segment = Segment(seg_cfg["id"], seg_cfg["border"], hgrid, output_dir=output_dir, regrid_dir=regrid_dir)
         segments.append(segment)
+    print(f"[PHY-OBC] Segments configured: {[f'{s.num}:{s.border}' for s in segments]}")
 
     for y in range(first_year, last_year + 1):
-        print(y)
+        print(f"[PHY-OBC] Starting processing year={y}")
         write_year(
             y,
             glorys_dir=glorys_dir,
@@ -420,6 +548,7 @@ def main(config_file):
             rst_dir=rst_dir,
             is_first_year=(y == first_year),
             is_last_year=(y == last_year),
+            weight_save=weight_save,
         )
 
     if ncrcat_years_flag:
@@ -428,6 +557,7 @@ def main(config_file):
             "did not match the number of variables provided."
         )
         ncrcat_years(len(segments), output_dir, variables, ncrcat_names)
+        print("[PHY-OBC] Completed ncrcat yearly concatenation")
 
 
 if __name__ == "__main__":
