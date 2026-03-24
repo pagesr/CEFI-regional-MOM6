@@ -43,19 +43,28 @@ os.makedirs(REGRID_DIR, exist_ok=True)
 def _weight_file(name):
     return os.path.join(REGRID_DIR, os.path.basename(name))
 
+
+def _reuse_if_exists(weight_file: str) -> bool:
+    reuse_requested = bool(config.get("reuse_weights", True))
+    exists = os.path.exists(weight_file)
+    if reuse_requested and not exists:
+        print(f"[IC-PHY] Regrid weights not found; creating new file: {weight_file}")
+    return reuse_requested and exists
+
 def regrid_tracer(fld, method='bilinear'):
     coords = xr.open_dataset(GOA_STATIC)
     coords = coords.rename({'geolon': 'lon', 'geolat': 'lat'})  # interp on this 
     gsource = xr.open_dataset(NEP_STATIC,decode_times=False) # Source
     gsource = gsource.rename({'geolon': 'lon', 'geolat': 'lat'})  # interp on this 
     print(gsource)
+    weight_file = _weight_file(config.get("regrid_tracer_weights", 'regrid_bilin.nc'))
     regrid = xesmf.Regridder(
         gsource,
         coords,
         method=method,
         periodic=False,
-        filename=_weight_file(config.get("regrid_tracer_weights", 'regrid_bilin.nc')),
-        reuse_weights=config.get("reuse_weights", True)
+        filename=weight_file,
+        reuse_weights=_reuse_if_exists(weight_file)
     )
     tdest = regrid(fld)
     return tdest
@@ -66,13 +75,14 @@ def regrid_u(fld, method='bilinear'):
     gsource = xr.open_dataset(NEP_STATIC,decode_times=False) # Source
     gsource = gsource.rename({'geolon_u': 'lon', 'geolat_u': 'lat'})  # interp on this 
     
+    weight_file = _weight_file(config.get("regrid_u_weights", 'regrid_bilin_uu.nc'))
     regrid = xesmf.Regridder(
         gsource,
         coords,
         method=method,
         periodic=False,
-        filename=_weight_file(config.get("regrid_u_weights", 'regrid_bilin_uu.nc')),
-        reuse_weights=config.get("reuse_weights", True)
+        filename=weight_file,
+        reuse_weights=_reuse_if_exists(weight_file)
     )
     tdest = regrid(fld)
     return tdest
@@ -83,12 +93,13 @@ def regrid_v(fld, method="bilinear"):
     gsource = xr.open_dataset(NEP_STATIC, decode_times=False)
     gsource = gsource.rename({"geolon_v": "lon", "geolat_v": "lat"})
 
+    weight_file = _weight_file(config.get("regrid_v_weights", "regrid_bilin_vv.nc"))
     regrid = xesmf.Regridder(
         gsource, coords,
         method=method,
         periodic=False,
-        filename=_weight_file(config.get("regrid_v_weights", "regrid_bilin_vv.nc")),
-        reuse_weights=config.get("reuse_weights", True),
+        filename=weight_file,
+        reuse_weights=_reuse_if_exists(weight_file),
     )
     return regrid(fld)
 

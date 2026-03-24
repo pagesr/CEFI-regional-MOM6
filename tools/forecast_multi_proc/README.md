@@ -57,6 +57,10 @@ python tools/forecast_multi_proc/submit_workflow.py \
   `CONDA_ENV_PATH/bin/python` (or `python`/`python3` in `PATH`).
 - `submit_bgc_obc_postprocess.slurm` is path-portable by default and runs relative to
   the `tools/forecast_multi_proc` directory (override with `PROC_DIR` if needed).
+- IC xESMF weights are stored/reused in:
+  - `tools/forecast_multi_proc/regrid_ic_phy_shared`
+  - `tools/forecast_multi_proc/regrid_ic_bgc_shared`
+  (auto-created if missing; reusable across cases).
 - PHY OBC xESMF weights are stored/reused in
   `tools/forecast_multi_proc/regrid_obc_phy_shared`
   (auto-created if missing; reusable across cases).
