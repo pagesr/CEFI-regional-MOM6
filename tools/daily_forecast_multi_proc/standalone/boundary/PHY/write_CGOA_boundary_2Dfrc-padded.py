@@ -251,11 +251,13 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     fcst_hist = path.join(fct_dir, f"{year}-{month}-e{ensemble}/history")
     print(f"[PHY-OBC] Forecast history dir: {fcst_hist}")
 
-    liste_files = [
-        f"oceanm_{year}_02.nc", f"oceanm_{year}_03.nc", f"oceanm_{year}_04.nc", f"oceanm_{year}_05.nc",
-        f"oceanm_{year}_06.nc", f"oceanm_{year}_07.nc", f"oceanm_{year}_08.nc", f"oceanm_{year}_09.nc",
-        f"oceanm_{year}_10.nc", f"oceanm_{year}_11.nc", f"oceanm_{year}_12.nc"
-    ]
+    # Build the next 11 forecast monthly files relative to the configured start month.
+    # This supports starts other than January (e.g., month=04) with year rollover.
+    start_ts = pd.Timestamp(int(year), int(month), 1)
+    liste_files = []
+    for offset in range(1, 12):
+        tgt = start_ts + pd.DateOffset(months=offset)
+        liste_files.append(f"oceanm_{tgt.year}_{tgt.month:02d}.nc")
 
     c = 1
     for file in liste_files:
@@ -285,9 +287,25 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     if "ssh" not in ds_sfc_hind_daily or "ssh" not in ds_sfc_fcst_daily:
         raise ValueError("Expected variable 'ssh' in ocean_daily.nc for hindcast and forecast.")
 
-    # Keep hindcast day-0 and forecast from day-1 onward to avoid duplicate start day.
+    # Keep hindcast day-0 at the configured start date and forecast from day-1 onward
+    # to avoid duplicate start day.
+    if "time" in ds_sfc_hind_daily["ssh"].coords:
+        hind_ssh = ds_sfc_hind_daily["ssh"]
+        hind_time = pd.to_datetime(hind_ssh["time"].values)
+        match = np.where(hind_time == ref.to_datetime64())[0]
+        if match.size > 0:
+            hind_day0 = hind_ssh.isel(time=slice(match[0], match[0] + 1))
+        else:
+            print(
+                "[PHY-OBC] WARNING: could not find exact hindcast daily SSH start date "
+                f"{ref.date()} in {hind_daily_path}; using first record."
+            )
+            hind_day0 = hind_ssh.isel(time=slice(0, 1))
+    else:
+        hind_day0 = ds_sfc_hind_daily["ssh"].isel(time=slice(0, 1))
+
     zos_daily_real = xr.concat(
-        [ds_sfc_hind_daily["ssh"].isel(time=slice(0, 1)), ds_sfc_fcst_daily["ssh"].isel(time=slice(1, None))],
+        [hind_day0, ds_sfc_fcst_daily["ssh"].isel(time=slice(1, None))],
         dim="time",
     )
 

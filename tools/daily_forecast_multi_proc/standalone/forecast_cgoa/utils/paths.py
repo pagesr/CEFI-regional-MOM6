@@ -1,9 +1,9 @@
-"""Central paths for the standalone forecast_multi_proc workflow."""
+"""Central paths for the standalone daily_forecast_multi_proc workflow."""
 
 import os
 from pathlib import Path
 
-WORKFLOW_ROOT = Path(__file__).resolve().parents[3]  # tools/forecast_multi_proc
+WORKFLOW_ROOT = Path(__file__).resolve().parents[3]  # tools/daily_forecast_multi_proc
 STANDALONE_ROOT = WORKFLOW_ROOT / "standalone"
 FORECAST_CGOA_DIR = STANDALONE_ROOT / "forecast_cgoa"
 
