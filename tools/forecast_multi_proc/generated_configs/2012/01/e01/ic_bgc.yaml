@@ -3,7 +3,7 @@ GOA_STATIC: /archive/Remi.Pages/fre/Arc_12/2026_02.01/CGOA_BGC_2025_07_base_nep_
 NEP_STATIC: /archive/Liz.Drenkard/fre/cefi/NEP/2025_07/NEP10k_202507_physics_bgc/gfdl.ncrc6-intel23-repro/pp/ocean_daily/ocean_daily.static.nc
 NEP_RESTART_DIR: /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_hindcast02/restart/restdate_20120101
 reuse_weights: true
-REGRID_DIR: /work5/rnp/IC-BC-GOA/CEFI-regional-MOM6/tools/forecast_multi_proc/regrid_ic_bgc_shared
+REGRID_DIR: /work5/rnp/IC-BC-GOA/CEFI-regional-MOM6/tools/daily_forecast_multi_proc/regrid_ic_bgc_shared
 regrid_tracer_weights: regrid_bilin_bgc.nc
 tracer_method: nearest_s2d
 OUT_IC: /work5/rnp/IC-BC-GOA/CEFI-regional-MOM6/tools/forecast_multi_proc/outputs/2012/01/IC/ic_bgc_20120101.nc
