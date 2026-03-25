@@ -1,0 +1,75 @@
+OBC zero-value scan report
+PHY directory: /work5/rnp/IC-BC-GOA/CEFI-regional-MOM6/tools/forecast_multi_proc/outputs/2012/01/OBC/PHY/e03
+BGC directory: /work5/rnp/IC-BC-GOA/CEFI-regional-MOM6/tools/forecast_multi_proc/outputs/2012/01/OBC/BGC/e03
+
+[PHY]
+OK: so_001_2012.nc
+OK: so_002_2012.nc
+OK: thetao_001_2012.nc
+OK: thetao_002_2012.nc
+OK: uv_001_2012.nc
+OK: uv_002_2012.nc
+OK: zos_001_2012.nc
+OK: zos_002_2012.nc
+
+[BGC]
+OK: alk_001_2012.nc
+OK: alk_002_2012.nc
+OK: chl_001_2012.nc
+OK: chl_002_2012.nc
+OK: chl_Di_001_2012.nc
+OK: chl_Di_002_2012.nc
+OK: chl_Lg_001_2012.nc
+OK: chl_Lg_002_2012.nc
+OK: chl_Md_001_2012.nc
+OK: chl_Md_002_2012.nc
+OK: chl_Sm_001_2012.nc
+OK: chl_Sm_002_2012.nc
+OK: dic_001_2012.nc
+OK: dic_002_2012.nc
+OK: fed_001_2012.nc
+OK: fed_002_2012.nc
+OK: fedet_001_2012.nc
+OK: fedet_002_2012.nc
+OK: nbact_001_2012.nc
+OK: nbact_002_2012.nc
+OK: ndet_001_2012.nc
+OK: ndet_002_2012.nc
+OK: ndi_001_2012.nc
+OK: ndi_002_2012.nc
+OK: nh4_001_2012.nc
+OK: nh4_002_2012.nc
+OK: nlg_001_2012.nc
+OK: nlg_002_2012.nc
+OK: nlgz_001_2012.nc
+OK: nlgz_002_2012.nc
+OK: nmd_001_2012.nc
+OK: nmd_002_2012.nc
+OK: nmdz_001_2012.nc
+OK: nmdz_002_2012.nc
+OK: no3_001_2012.nc
+OK: no3_002_2012.nc
+OK: nsm_001_2012.nc
+OK: nsm_002_2012.nc
+OK: nsmz_001_2012.nc
+OK: nsmz_002_2012.nc
+OK: o2_001_2012.nc
+OK: o2_002_2012.nc
+OK: pdi_001_2012.nc
+OK: pdi_002_2012.nc
+OK: plg_001_2012.nc
+OK: plg_002_2012.nc
+OK: pmd_001_2012.nc
+OK: pmd_002_2012.nc
+OK: po4_001_2012.nc
+OK: po4_002_2012.nc
+OK: psm_001_2012.nc
+OK: psm_002_2012.nc
+OK: silg_001_2012.nc
+OK: silg_002_2012.nc
+OK: simd_001_2012.nc
+OK: simd_002_2012.nc
+OK: sio4_001_2012.nc
+OK: sio4_002_2012.nc
+
+Total warnings: 0

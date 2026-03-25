@@ -10,18 +10,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# Under Slurm, the script may execute from a spool copy path. Prefer the
-# original submission directory when available.
 PROC_DIR="${PROC_DIR:-${SLURM_SUBMIT_DIR:-$SCRIPT_DIR}}"
 
-# Optional override; by default we use the task-list in this directory.
 TASK_LIST="${TASK_LIST:-$PROC_DIR/bgc_obc_postprocess_tasks.txt}"
-
-# Optional: keep originals even when merge succeeds.
 REMOVE_ORIGINALS_ON_SUCCESS="${REMOVE_ORIGINALS_ON_SUCCESS:-1}"
-
-# Optional: reuse an existing reggrid file during merge if supported by merge script.
-# Leave empty to disable.
 REUSE_REGGRID_FILE="${REUSE_REGGRID_FILE:-}"
 
 if [[ ! -f "$TASK_LIST" ]]; then
@@ -32,6 +24,12 @@ fi
 cd "$PROC_DIR"
 
 module load nco
+module load miniforge
+
+set +u
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate /nbhome/role.medgrp/.conda/envs/medpy311
+set -u
 
 merge_script="${MERGE_SCRIPT:-$PROC_DIR/postprocess_bgc_obc_nco.sh}"
 if [[ ! -x "$merge_script" ]]; then
@@ -42,7 +40,6 @@ fi
 processed_count=0
 
 while read -r output_dir year month ensemble final_out; do
-  # Skip blank lines and comments
   if [[ -z "${output_dir:-}" || "${output_dir:0:1}" == "#" ]]; then
     continue
   fi
