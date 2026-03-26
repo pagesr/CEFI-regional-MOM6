@@ -39,10 +39,19 @@ fi
 
 processed_count=0
 
-while read -r output_dir year month ensemble final_out; do
-  if [[ -z "${output_dir:-}" || "${output_dir:0:1}" == "#" ]]; then
-    continue
-  fi
+readarray -t tasks < <(awk 'NF && $1 !~ /^#/' "$TASK_LIST")
+task_count="${#tasks[@]}"
+
+if [[ "$task_count" -eq 0 ]]; then
+  echo "ERROR: No runnable tasks found in $TASK_LIST" >&2
+  exit 1
+fi
+
+process_task_line() {
+  local task_line="$1"
+  local output_dir year month ensemble final_out
+
+  read -r output_dir year month ensemble final_out <<< "$task_line"
 
   month="$(printf '%02d' "$month")"
   ensemble="$(printf '%02d' "$ensemble")"
@@ -78,8 +87,25 @@ while read -r output_dir year month ensemble final_out; do
       echo "No original segment files to remove in $output_dir"
     fi
   fi
+}
 
-  processed_count=$((processed_count + 1))
-done < "$TASK_LIST"
+if [[ -n "${SLURM_ARRAY_TASK_ID:-}" ]]; then
+  task_idx=$((SLURM_ARRAY_TASK_ID - 1))
+  if (( task_idx < 0 || task_idx >= task_count )); then
+    echo "ERROR: SLURM_ARRAY_TASK_ID=$SLURM_ARRAY_TASK_ID outside valid range 1-$task_count" >&2
+    exit 1
+  fi
 
-echo "Done. Processed ${processed_count} merge task(s)."
+  process_task_line "${tasks[$task_idx]}"
+  processed_count=1
+  echo "Done. Processed array task ${SLURM_ARRAY_TASK_ID}/${task_count}."
+else
+  for task_line in "${tasks[@]}"; do
+    process_task_line "$task_line"
+    processed_count=$((processed_count + 1))
+  done
+  echo "Done. Processed ${processed_count} merge task(s)."
+fi
+
+echo "Tip: submit one SLURM job per task line with:"
+echo "  sbatch --array=1-${task_count} \"${BASH_SOURCE[0]}\""
