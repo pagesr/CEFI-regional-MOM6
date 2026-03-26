@@ -4,3 +4,4 @@
 # /work/.../outputs/2012/01/OBC/BGC/e01 2012 01 01
 # Example with explicit final output:
 # /work/.../outputs/2012/01/OBC/BGC/e02 2012 01 02 /work/.../outputs/2012/01/OBC/BGC/e02/custom_name.nc
+/work5/rnp/IC-BC-GOA/CEFI-regional-MOM6/tools/forecast_multi_proc//outputs/2012/01/OBC/BGC/e02 2012 01 02

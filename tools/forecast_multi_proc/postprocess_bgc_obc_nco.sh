@@ -4,8 +4,28 @@
 # Expected per-tracer inputs in OUTPUT_DIR:
 #   <tracer>_<SEGMENT3>_<YEAR>.nc
 #
+# Example:
+#   alk_001_2012.nc
+#   alk_002_2012.nc
+#   dic_001_2012.nc
+#   dic_002_2012.nc
+#
 # Output:
 #   bgc_obc_<YEAR>_<MONTH>_e<ENSEMBLE>.nc
+#
+# What this script does
+# ---------------------
+# 1. Merge all segment files for each tracer into one temporary tracer file
+# 2. Seed the final output with the first merged tracer file
+# 3. Append variables from the remaining merged tracer files
+#
+# Important:
+# - Keeps tracer variables such as alk_segment_001, alk_segment_002, ...
+# - Keeps matching thickness variables such as dz_alk_segment_001, dz_alk_segment_002, ...
+# - Skips repeated coordinate / metadata variables that are already present
+#
+# Usage:
+#   bash postprocess_bgc_obc_nco.sh <output_dir> <year> <month> <ensemble> [final_output] [reggrid_file]
 
 set -euo pipefail
 
@@ -141,7 +161,7 @@ ncatted -O -h -a history,global,d,, "$FINAL_OUT" >/dev/null 2>&1 || true
 echo "Building final file: $FINAL_OUT"
 
 ###############################################################################
-# Append only true tracer data variables from each remaining merged tracer file
+# Append tracer variables + matching dz_tracer variables
 ###############################################################################
 for tf in "${merged_tracers[@]:1}"; do
   b="$(basename "$tf")"
@@ -159,11 +179,13 @@ tracer = sys.argv[2]
 
 ds = xr.open_dataset(path, decode_times=False)
 
-# Skip standard coordinates / metadata / bounds-like variables
+# Variables already expected in the seeded final file, or metadata-like fields
+# that should not be repeatedly appended from every tracer file.
 skip_exact = {
     "time",
     "nv",
 }
+
 skip_prefixes = (
     "lat_",
     "lon_",
@@ -173,7 +195,6 @@ skip_prefixes = (
     "z_",
     "zl",
     "zi",
-    "dz_",
     "depth",
     "ht",
     "wet",
@@ -181,14 +202,21 @@ skip_prefixes = (
 )
 
 vars_keep = []
-for v in ds.data_vars:
+for v in ds.variables:
     if v in skip_exact:
         continue
     if any(v.startswith(p) for p in skip_prefixes):
         continue
-    # Keep variables matching the tracer name or beginning with tracer_
+
+    # Keep tracer variables: alk_segment_001, alk_segment_002, ...
     if v == tracer or v.startswith(tracer + "_"):
         vars_keep.append(v)
+        continue
+
+    # Keep matching dz variables: dz_alk_segment_001, dz_alk_segment_002, ...
+    if v == f"dz_{tracer}" or v.startswith(f"dz_{tracer}_"):
+        vars_keep.append(v)
+        continue
 
 ds.close()
 print(",".join(vars_keep))

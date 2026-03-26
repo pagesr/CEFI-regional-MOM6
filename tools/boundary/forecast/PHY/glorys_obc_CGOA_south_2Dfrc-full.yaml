@@ -11,7 +11,7 @@ fct_dir: '/archive/Dmitry.Dukhovskoy/fre/NEP/forecast_bgc/NEPbgc_fcst_dailyOB01'
 rst_dir: '/archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_hindcast02/restart/'
 
 
-output_dir: './outputs_CGOA_feb26fcst'
+output_dir: './outputs_CGOA_feb26fcst_test'
 hgrid: '/work/Remi.Pages/GOA2p5k/GRID/CGOA_2.5k/ocean_hgrid.nc'
 ncrcat_years: true  # Set to false if you want to skip ncrcat_years
 ncrcat_names:

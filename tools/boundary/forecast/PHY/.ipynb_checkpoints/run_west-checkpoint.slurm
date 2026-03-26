@@ -10,4 +10,4 @@ module load nco
 
 
 
-python -u write_CGOA_boundary_west_test_2D.py --config glorys_obc_CGOA_west_2D.yaml
+python -u write_CGOA_boundary_west_2D.py --config glorys_obc_CGOA_west_2D.yaml

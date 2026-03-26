@@ -183,6 +183,12 @@ def regrid_tracers_from_file(
     # Select first 12 times or all
     if time_sel == "first12":
         ds_in = ds_in.isel(time=slice(0, 12))
+        # --- FORCE TIME TO START OF MONTH ---
+        time_vals = pd.to_datetime(ds_in["time"].values)
+        
+        new_time = [pd.Timestamp(t).to_period("M").to_timestamp() for t in time_vals]
+        
+        ds_in = ds_in.assign_coords(time=("time", new_time))
     elif time_sel == "all":
         pass
     else:

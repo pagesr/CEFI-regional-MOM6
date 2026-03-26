@@ -5,3 +5,10 @@ html
 *.nc
 # Ignore pycache
 **__pycache__
+*.out
+*.nc
+*.tmp
+*.ipynb_checkpoints
+*.err
+*.log
+*.done*

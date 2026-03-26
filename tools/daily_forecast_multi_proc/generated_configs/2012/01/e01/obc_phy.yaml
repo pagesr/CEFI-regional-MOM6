@@ -7,11 +7,11 @@ NEP_STATIC: /archive/Liz.Drenkard/fre/cefi/NEP/2025_07/NEP10k_202507_physics_bgc
 glorys_dir: /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_hindcast02/history
 fct_dir: /archive/Dmitry.Dukhovskoy/fre/NEP/forecast_bgc/NEPbgc_fcst_dailyOB01
 rst_dir: /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_hindcast02/restart
-output_dir: /work5/rnp/IC-BC-GOA/CEFI-regional-MOM6/tools/forecast_multi_proc/outputs/2012/01/OBC/PHY/e01
+output_dir: /work5/rnp/IC-BC-GOA/CEFI-regional-MOM6/tools/daily_forecast_multi_proc/outputs/2012/01/OBC/PHY/e01
 hgrid: /work/Remi.Pages/GOA2p5k/GRID/CGOA_2.5k/ocean_hgrid.nc
 ncrcat_years: false
 weight_save: true
-regrid_dir: /work5/rnp/IC-BC-GOA/CEFI-regional-MOM6/tools/forecast_multi_proc/regrid_obc_phy_shared
+regrid_dir: /work5/rnp/IC-BC-GOA/CEFI-regional-MOM6/tools/daily_forecast_multi_proc/regrid_obc_phy_shared
 ncrcat_names:
 - thetao
 - so
