@@ -215,7 +215,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                 pd.to_datetime(ds_sfc_fcst_daily["time"].isel(time=slice(1, None)).values),
             ]
         )
-    )
+    ).normalize()
     _progress("TIME", f"Daily target steps (no pad) = {len(target_time)}")
 
     nt = len(target_time) + 1  # +1 for padded extra step
