@@ -146,6 +146,20 @@ def _interp_time_to_target(src_values, src_time, target_time, dims):
     return np.asarray(da_out.values)
 
 
+def _hold_monthly_values_on_daily_grid(src_values, src_time, target_time):
+    """
+    Map monthly source snapshots to daily target times using step-wise holds.
+
+    Each daily timestamp gets the most recent monthly source value at or before
+    that time (i.e., piecewise-constant in time).
+    """
+    src_dt = np.asarray(pd.DatetimeIndex(src_time).values, dtype="datetime64[ns]")
+    tgt_dt = np.asarray(pd.DatetimeIndex(target_time).values, dtype="datetime64[ns]")
+    src_idx = np.searchsorted(src_dt, tgt_dt, side="right") - 1
+    src_idx = np.clip(src_idx, 0, len(src_dt) - 1)
+    return src_values[src_idx]
+
+
 def _progress(tag, message):
     print(f"[PHY-OBC][{tag}] {message}", flush=True)
 
@@ -154,7 +168,7 @@ def _progress(tag, message):
 # Core routine
 # ----------------------------
 def write_year(year, glorys_dir, nep_static, segments, variables, month, ensemble, fct_dir, rst_dir,
-               is_first_year=False, is_last_year=False, weight_save=True):
+               is_first_year=False, is_last_year=False, weight_save=True, interp_tracer_daily=True):
     _progress(
         "START",
         f"[PHY-OBC] ==== write_year year={year} month={month} ensemble={ensemble} "
@@ -287,13 +301,20 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
         vo_src[idx] = np.asarray(tmp_z["vo"][0])
         tmp_z.close()
 
-    _progress("INTERP", "Interpolating monthly source fields onto daily timeline")
-    ds["so"][0:nt - 1] = _interp_time_to_target(
-        so_src, src_time, target_time, ("time", "z", "yh", "xh")
-    )
-    ds["thetao"][0:nt - 1] = _interp_time_to_target(
-        thetao_src, src_time, target_time, ("time", "z", "yh", "xh")
-    )
+    if interp_tracer_daily:
+        _progress("INTERP", "Interpolating monthly tracer source fields (so/thetao) onto daily timeline")
+        ds["so"][0:nt - 1] = _interp_time_to_target(
+            so_src, src_time, target_time, ("time", "z", "yh", "xh")
+        )
+        ds["thetao"][0:nt - 1] = _interp_time_to_target(
+            thetao_src, src_time, target_time, ("time", "z", "yh", "xh")
+        )
+    else:
+        _progress("INTERP", "Keeping so/thetao as monthly source (step-wise hold); no daily interpolation")
+        ds["so"][0:nt - 1] = _hold_monthly_values_on_daily_grid(so_src, src_time, target_time)
+        ds["thetao"][0:nt - 1] = _hold_monthly_values_on_daily_grid(thetao_src, src_time, target_time)
+
+    _progress("INTERP", "Interpolating monthly velocity source fields (uo/vo) onto daily timeline")
     ds["uo"][0:nt - 1] = _interp_time_to_target(
         uo_src, src_time, target_time, ("time", "z", "yh", "xq")
     )
@@ -496,6 +517,7 @@ def main(config_file):
     ncrcat_years_flag = cfg.get("ncrcat_years", False)
     ncrcat_names = cfg.get("ncrcat_names", [])
     weight_save = bool(cfg.get("weight_save", True))
+    interp_tracer_daily = bool(cfg.get("interp_tracer_daily", True))
     regrid_dir = cfg.get("regrid_dir", output_dir)
 
     nep_static = _require(cfg, "NEP_STATIC")
@@ -534,6 +556,7 @@ def main(config_file):
             is_first_year=(y == first_year),
             is_last_year=(y == last_year),
             weight_save=weight_save,
+            interp_tracer_daily=interp_tracer_daily,
         )
 
     if ncrcat_years_flag:
