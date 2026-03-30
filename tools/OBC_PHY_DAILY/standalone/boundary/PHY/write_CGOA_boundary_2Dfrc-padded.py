@@ -146,17 +146,23 @@ def _interp_time_to_target(src_values, src_time, target_time, dims):
     return np.asarray(da_out.values)
 
 
+def _progress(tag, message):
+    print(f"[PHY-OBC][{tag}] {message}", flush=True)
+
+
 # ----------------------------
 # Core routine
 # ----------------------------
 def write_year(year, glorys_dir, nep_static, segments, variables, month, ensemble, fct_dir, rst_dir,
                is_first_year=False, is_last_year=False, weight_save=True):
-    print(
+    _progress(
+        "START",
         f"[PHY-OBC] ==== write_year year={year} month={month} ensemble={ensemble} "
         f"vars={variables} segments={[s.border for s in segments]} weight_save={weight_save} ===="
     )
 
     # Build daily time source from hindcast + forecast daily SSH.
+    _progress("TIME", "Opening hindcast/forecast daily SSH files")
     hind_daily_file = path.join(glorys_dir, f"{year}0101/ocean_daily.nc")
     ds_sfc_hind_daily = xr.open_dataset(hind_daily_file)
     print(f"[PHY-OBC] Loaded hindcast daily file: {hind_daily_file}")
@@ -175,6 +181,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
             ]
         )
     )
+    _progress("TIME", f"Daily target steps (no pad) = {len(target_time)}")
 
     nt = len(target_time) + 1  # +1 for padded extra step
     nz = 75
@@ -185,6 +192,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     nzi = 76
     nnv = 2
 
+    _progress("TIME", f"Building CF time axes with padded nt={nt}")
     # -------------------------
     # BUILD CF TIME + BOUNDS
     # -------------------------
@@ -242,6 +250,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
 
     ds["time_bnds"].attrs = {"long_name": "time bounds"}
 
+    _progress("SRC", "Loading restart and monthly forecast source fields")
     # ==========================================
     # Step 2: Build monthly 3D source + daily SSH source
     # ==========================================
@@ -268,7 +277,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     for idx, offset in enumerate(range(1, 12), start=1):
         tgt = start_ts + pd.DateOffset(months=offset)
         file = f"oceanm_{tgt.year}_{tgt.month:02d}.nc"
-        print(f"[PHY-OBC] Loading forecast monthly file: {file}")
+        _progress("SRC", f"Loading monthly file {idx}/11: {file}")
         tmp_z = xr.open_dataset(path.join(fcst_hist, file))
         tmp_z = tmp_z.rename_vars({'salt': 'so', 'potT': 'thetao', 'u': 'uo', 'v': 'vo'})
         src_time.append(pd.Timestamp(tgt.year, tgt.month, 1))
@@ -278,6 +287,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
         vo_src[idx] = np.asarray(tmp_z["vo"][0])
         tmp_z.close()
 
+    _progress("INTERP", "Interpolating monthly source fields onto daily timeline")
     ds["so"][0:nt - 1] = _interp_time_to_target(
         so_src, src_time, target_time, ("time", "z", "yh", "xh")
     )
@@ -297,6 +307,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
         ).values
     )
 
+    _progress("MASK", "Applying t=0 NaN mask from reference daily index")
     # Apply NaN mask from a reference forecast month onto t=0
     mask_idx = min(8, nt - 2)
     ds["vo"][0] = ds["vo"][0].where(~ds["vo"].isel(time=mask_idx).isnull())
@@ -305,8 +316,10 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     ds["thetao"][0] = ds["thetao"][0].where(~ds["thetao"].isel(time=mask_idx).isnull())
     ds["so"][0] = ds["so"][0].where(~ds["so"].isel(time=mask_idx).isnull())
 
+    _progress("PAD", "Padding final extra time step")
     # ==========================================
     # Step 3b: PAD EXTRA LAST TIME STEP
+    _progress("GRID", f"Opening static grid file: {nep_static}")
     # ==========================================
     # Duplicate the final available daily state into the extra slot
     ds["zos"][nt - 1, :, :] = ds["zos"][nt - 2, :, :]
@@ -347,9 +360,9 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     # ==========================================
 
     if "zos" in variables and "zos" in ds:
-        print("[PHY-OBC] Regridding variable group: zos")
+        _progress("REGRID", "Regridding variable group: zos")
         for seg in segments:
-            print(f"{seg.border} zos")
+            _progress("REGRID", f"segment={seg.border} var=zos")
             tracer = ds["zos"]
             print(tracer.shape)
             tracer = _attach_2d_lonlat(tracer, lonT, latT, name="zos")
@@ -367,9 +380,9 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                 )
 
     if "uv" in variables and ("uo" in ds) and ("vo" in ds):
-        print("[PHY-OBC] Regridding variable group: uv")
+        _progress("REGRID", "Regridding variable group: uv")
         for seg in segments:
-            print(f"{seg.border} uv")
+            _progress("REGRID", f"segment={seg.border} var=uv")
             uo = ds["uo"]
             vo = ds["vo"]
 
@@ -402,13 +415,13 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
             continue
 
         if var in ds:
-            print(f"[PHY-OBC] Regridding tracer variable: {var}")
+            _progress("REGRID", f"Regridding tracer variable: {var}")
             for seg in segments:
                 print(ds[var].shape)
                 print(var)
                 print("~~~~~~~~~~~~~~~~~")
                 print("~~~~~~~~~~~~~~~~~")
-                print(f"{seg.border} {var}")
+                _progress("REGRID", f"segment={seg.border} var={var}")
                 tracer = ds[var]
                 tracer = _attach_2d_lonlat(tracer, lonT, latT, name=var)
                 print(tracer)
@@ -449,7 +462,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     ds_z_hind.close()
     ds.close()
     st.close()
-    print(f"[PHY-OBC] Completed year={year} month={month} ensemble={ensemble}")
+    _progress("DONE", f"Completed year={year} month={month} ensemble={ensemble}")
 
 
 def ncrcat_years(nsegments, output_dir, variables, ncrcat_names):
