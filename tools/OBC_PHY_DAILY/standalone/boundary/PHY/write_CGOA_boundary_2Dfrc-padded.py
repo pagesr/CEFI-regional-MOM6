@@ -167,6 +167,17 @@ def _pad_last_month_for_interp(da: xr.DataArray) -> xr.DataArray:
     return xr.concat([da, last], dim="time")
 
 
+def _find_ssh_var_name(ds: xr.Dataset) -> str:
+    """Return SSH variable name from daily source files."""
+    for name in ("zos", "ssh", "ave_ssh", "sea_surface_height"):
+        if name in ds.data_vars:
+            return name
+    raise KeyError(
+        "No SSH variable found in daily source dataset. "
+        "Expected one of: zos, ssh, ave_ssh, sea_surface_height."
+    )
+
+
 def _progress(tag, message):
     print(f"[PHY-OBC][{tag}] {message}", flush=True)
 
@@ -193,6 +204,9 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     fcst_daily_file = path.join(fcst_hist, "ocean_daily.nc")
     ds_sfc_fcst_daily = xr.open_dataset(fcst_daily_file)
     print(f"[PHY-OBC] Loaded forecast daily file: {fcst_daily_file}")
+    hind_ssh_var = _find_ssh_var_name(ds_sfc_hind_daily)
+    fcst_ssh_var = _find_ssh_var_name(ds_sfc_fcst_daily)
+    _progress("TIME", f"Using daily SSH vars hindcast={hind_ssh_var} forecast={fcst_ssh_var}")
 
     target_time = pd.DatetimeIndex(
         np.concatenate(
@@ -321,7 +335,10 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
 
     ds["zos"][0:nt - 1] = np.asarray(
         xr.concat(
-            [ds_sfc_hind_daily["zos"].isel(time=slice(0, 1)), ds_sfc_fcst_daily["zos"].isel(time=slice(1, None))],
+            [
+                ds_sfc_hind_daily[hind_ssh_var].isel(time=slice(0, 1)),
+                ds_sfc_fcst_daily[fcst_ssh_var].isel(time=slice(1, None)),
+            ],
             dim="time",
         ).values
     )
