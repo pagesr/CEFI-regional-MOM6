@@ -160,6 +160,13 @@ def _hold_monthly_values_on_daily_grid(src_values, src_time, target_time):
     return src_values[src_idx]
 
 
+def _pad_last_month_for_interp(da: xr.DataArray) -> xr.DataArray:
+    """Append one extra monthly sample (copy of last value) one month later."""
+    next_month = pd.Timestamp(da["time"].values[-1]) + pd.DateOffset(months=1)
+    last = da.isel(time=-1).expand_dims(time=[next_month])
+    return xr.concat([da, last], dim="time")
+
+
 def _progress(tag, message):
     print(f"[PHY-OBC][{tag}] {message}", flush=True)
 
@@ -244,8 +251,6 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
             zos    =(("time", "yh", "xh"), np.zeros((nt, ny, nx))),
             so     =(("time", "z", "yh", "xh"), np.zeros((nt, nz, ny, nx))),
             thetao =(("time", "z", "yh", "xh"), np.zeros((nt, nz, ny, nx))),
-            uo     =(("time", "z", "yh", "xq"), np.zeros((nt, nz, ny, nxq))),
-            vo     =(("time", "z", "yq", "xh"), np.zeros((nt, nz, nyq, nx))),
         ),
         coords=coords
     )
@@ -314,13 +319,6 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
         ds["so"][0:nt - 1] = _hold_monthly_values_on_daily_grid(so_src, src_time, target_time)
         ds["thetao"][0:nt - 1] = _hold_monthly_values_on_daily_grid(thetao_src, src_time, target_time)
 
-    _progress("INTERP", "Interpolating monthly velocity source fields (uo/vo) onto daily timeline")
-    ds["uo"][0:nt - 1] = _interp_time_to_target(
-        uo_src, src_time, target_time, ("time", "z", "yh", "xq")
-    )
-    ds["vo"][0:nt - 1] = _interp_time_to_target(
-        vo_src, src_time, target_time, ("time", "z", "yq", "xh")
-    )
     ds["zos"][0:nt - 1] = np.asarray(
         xr.concat(
             [ds_sfc_hind_daily["zos"].isel(time=slice(0, 1)), ds_sfc_fcst_daily["zos"].isel(time=slice(1, None))],
@@ -331,8 +329,6 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     _progress("MASK", "Applying t=0 NaN mask from reference daily index")
     # Apply NaN mask from a reference forecast month onto t=0
     mask_idx = min(8, nt - 2)
-    ds["vo"][0] = ds["vo"][0].where(~ds["vo"].isel(time=mask_idx).isnull())
-    ds["uo"][0] = ds["uo"][0].where(~ds["uo"].isel(time=mask_idx).isnull())
     ds["zos"][0] = ds["zos"][0].where(~ds["zos"].isel(time=mask_idx).isnull())
     ds["thetao"][0] = ds["thetao"][0].where(~ds["thetao"].isel(time=mask_idx).isnull())
     ds["so"][0] = ds["so"][0].where(~ds["so"].isel(time=mask_idx).isnull())
@@ -346,8 +342,6 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     ds["zos"][nt - 1, :, :] = ds["zos"][nt - 2, :, :]
     ds["so"][nt - 1, :, :, :] = ds["so"][nt - 2, :, :, :]
     ds["thetao"][nt - 1, :, :, :] = ds["thetao"][nt - 2, :, :, :]
-    ds["uo"][nt - 1, :, :, :] = ds["uo"][nt - 2, :, :, :]
-    ds["vo"][nt - 1, :, :, :] = ds["vo"][nt - 2, :, :, :]
 
     # ==========================================
     # Step 4: Load NEP static grid (2D lon/lat)
@@ -400,20 +394,37 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                     time_attrs=time_attrs, time_encoding=time_encoding
                 )
 
-    if "uv" in variables and ("uo" in ds) and ("vo" in ds):
+    if "uv" in variables:
         _progress("REGRID", "Regridding variable group: uv")
+        uv_monthly_time = pd.DatetimeIndex(src_time)
+        uo_monthly = xr.DataArray(
+            uo_src,
+            dims=("time", "z", "yh", "xq"),
+            coords={"time": uv_monthly_time, "z": np.arange(nz), "yh": np.arange(ny), "xq": np.arange(nxq)},
+        )
+        vo_monthly = xr.DataArray(
+            vo_src,
+            dims=("time", "z", "yq", "xh"),
+            coords={"time": uv_monthly_time, "z": np.arange(nz), "yq": np.arange(nyq), "xh": np.arange(nx)},
+        )
         for seg in segments:
             _progress("REGRID", f"segment={seg.border} var=uv")
-            uo = ds["uo"]
-            vo = ds["vo"]
-
-            uo = _attach_2d_lonlat(uo, lonU, latU, name="uo")
-            vo = _attach_2d_lonlat(vo, lonV, latV, name="vo")
-
-            out_uv = seg.regrid_velocity(
-                uo, vo, suffix=year, flood=False, rotate=False, weight_save=weight_save,
+            _progress("REGRID", f"segment={seg.border} var=uv (monthly source -> OBC monthly)")
+            uo_m = _attach_2d_lonlat(uo_monthly, lonU, latU, name="uo")
+            vo_m = _attach_2d_lonlat(vo_monthly, lonV, latV, name="vo")
+            out_uv_monthly = seg.regrid_velocity(
+                uo_m, vo_m, write=False, flood=False, rotate=False, weight_save=weight_save,
                 time_attrs=time_attrs, time_encoding=time_encoding
             )
+            out_uv_monthly = out_uv_monthly.assign_coords(time=uv_monthly_time)
+
+            _progress("INTERP", f"segment={seg.border} var=uv (OBC monthly -> daily)")
+            out_uv_monthly = _pad_last_month_for_interp(out_uv_monthly)
+            out_uv = out_uv_monthly.interp(time=all_times, kwargs={"fill_value": "extrapolate"})
+            out_uv["time"].attrs = time_attrs
+            out_uv["time"].encoding = time_encoding
+            seg.to_netcdf(out_uv, "uv", suffix=year)
+
             ukey = f"u_{seg.segstr}"
             vkey = f"v_{seg.segstr}"
             bad_u = ukey in out_uv and _all_finite_values_zero(out_uv[ukey])
@@ -426,10 +437,16 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                 )
                 _remove_if_exists(path.join(seg.regrid_dir, f"regrid_{seg.segstr}_u.nc"))
                 _remove_if_exists(path.join(seg.regrid_dir, f"regrid_{seg.segstr}_v.nc"))
-                seg.regrid_velocity(
-                    uo, vo, suffix=year, flood=False, rotate=False, weight_save=weight_save,
+                out_uv_monthly = seg.regrid_velocity(
+                    uo_m, vo_m, write=False, flood=False, rotate=False, weight_save=weight_save,
                     time_attrs=time_attrs, time_encoding=time_encoding
                 )
+                out_uv_monthly = out_uv_monthly.assign_coords(time=uv_monthly_time)
+                out_uv_monthly = _pad_last_month_for_interp(out_uv_monthly)
+                out_uv = out_uv_monthly.interp(time=all_times, kwargs={"fill_value": "extrapolate"})
+                out_uv["time"].attrs = time_attrs
+                out_uv["time"].encoding = time_encoding
+                seg.to_netcdf(out_uv, "uv", suffix=year)
 
     for var in variables:
         if var in ["zos", "uv"]:
