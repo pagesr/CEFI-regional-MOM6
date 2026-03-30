@@ -438,6 +438,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
             _progress("INTERP", f"segment={seg.border} var=uv (OBC monthly -> daily)")
             out_uv_monthly = _pad_last_month_for_interp(out_uv_monthly)
             out_uv = out_uv_monthly.interp(time=all_times, kwargs={"fill_value": "extrapolate"})
+            out_uv = out_uv.assign_coords(time=("time", time_days))
             out_uv["time"].attrs = time_attrs
             out_uv["time"].encoding = time_encoding
             seg.to_netcdf(out_uv, "uv", suffix=year)
@@ -461,6 +462,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                 out_uv_monthly = out_uv_monthly.assign_coords(time=uv_monthly_time)
                 out_uv_monthly = _pad_last_month_for_interp(out_uv_monthly)
                 out_uv = out_uv_monthly.interp(time=all_times, kwargs={"fill_value": "extrapolate"})
+                out_uv = out_uv.assign_coords(time=("time", time_days))
                 out_uv["time"].attrs = time_attrs
                 out_uv["time"].encoding = time_encoding
                 seg.to_netcdf(out_uv, "uv", suffix=year)
