@@ -67,4 +67,15 @@ def run_command(command: Sequence[str], cwd: Path, log_file: Path) -> None:
         log.write(f"[{now_stamp()}] END return_code={result.returncode}\n")
 
     if result.returncode != 0:
-        raise RuntimeError(f"Command failed ({result.returncode}): {' '.join(command)}")
+        tail = ""
+        try:
+            lines = log_file.read_text(encoding="utf-8").splitlines()
+            tail_lines = lines[-40:]
+            if tail_lines:
+                tail = "\n--- log tail ---\n" + "\n".join(tail_lines)
+        except OSError:
+            tail = ""
+        raise RuntimeError(
+            f"Command failed ({result.returncode}): {' '.join(command)}\n"
+            f"log_file={log_file}{tail}"
+        )

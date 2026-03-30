@@ -69,10 +69,13 @@ def run_phy_obc(config: Path, year: str, month: str, ensemble: str, output_root:
             f"{fcst_hist}. Check fct_dir/ensemble mapping in generated obc_phy config."
         )
 
+    log_file = DEFAULT_LOG_ROOT / f"{year}_{month}_e{ensemble}_phy_obc.log"
+    print(f"[OBC-PHY] stage log: {log_file}")
+
     run_command(
         [sys.executable, PHY_OBC_SCRIPT.name, "--config", str(config)],
         cwd=PHY_OBC_DIR,
-        log_file=DEFAULT_LOG_ROOT / f"{year}_{month}_e{ensemble}_phy_obc.log",
+        log_file=log_file,
     )
     print(f"[OBC-PHY] finished script run for {year}-{month} e{ensemble}")
     write_marker(f"phy_obc_e{ensemble}", out_dir)
