@@ -49,7 +49,8 @@ if [[ -z "$PYTHON_BIN" ]]; then
   fi
 fi
 
-"$PYTHON_BIN" tools/OBC_PHY_DAILY/run_task_from_tsv.py \
+export PYTHONUNBUFFERED=1
+"$PYTHON_BIN" -u tools/OBC_PHY_DAILY/run_task_from_tsv.py \
   --stage phy \
   --task-file "$TASK_FILE" \
   --task-id "$SLURM_ARRAY_TASK_ID" \

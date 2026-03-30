@@ -25,7 +25,7 @@ def _load_row(task_file: Path, task_id: int) -> dict[str, str]:
 
 
 def _run(cmd: list[str]) -> None:
-    print("[TASK]", " ".join(cmd))
+    print("[TASK]", " ".join(cmd), flush=True)
     subprocess.run(cmd, check=True)
 
 

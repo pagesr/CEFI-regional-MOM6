@@ -55,18 +55,24 @@ def run_command(command: Sequence[str], cwd: Path, log_file: Path) -> None:
         log.flush()
         env = os.environ.copy()
         env.setdefault("PYTHONUNBUFFERED", "1")
-        result = subprocess.run(
+        process = subprocess.Popen(
             command,
             cwd=str(cwd),
             env=env,
-            stdout=log,
+            stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
-            check=False,
+            bufsize=1,
         )
-        log.write(f"[{now_stamp()}] END return_code={result.returncode}\n")
+        assert process.stdout is not None
+        for line in process.stdout:
+            log.write(line)
+            log.flush()
+            print(line, end="", flush=True)
+        result_code = process.wait()
+        log.write(f"[{now_stamp()}] END return_code={result_code}\n")
 
-    if result.returncode != 0:
+    if result_code != 0:
         tail = ""
         try:
             lines = log_file.read_text(encoding="utf-8").splitlines()
@@ -76,6 +82,6 @@ def run_command(command: Sequence[str], cwd: Path, log_file: Path) -> None:
         except OSError:
             tail = ""
         raise RuntimeError(
-            f"Command failed ({result.returncode}): {' '.join(command)}\n"
+            f"Command failed ({result_code}): {' '.join(command)}\n"
             f"log_file={log_file}{tail}"
         )
