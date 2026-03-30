@@ -263,8 +263,6 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
             time_bnds=(("time", "nv"), time_bnds),
 
             zos    =(("time", "yh", "xh"), np.zeros((nt, ny, nx))),
-            so     =(("time", "z", "yh", "xh"), np.zeros((nt, nz, ny, nx))),
-            thetao =(("time", "z", "yh", "xh"), np.zeros((nt, nz, ny, nx))),
         ),
         coords=coords
     )
@@ -296,13 +294,9 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     ds_z_hind = ds_z_hind.rename({'Salt': 'so', 'Temp': 'thetao', 'u': 'uo', 'v': 'vo'})
 
     src_time = [pd.Timestamp(int(year), int(month), 1)]
-    so_src = np.zeros((12, nz, ny, nx))
-    thetao_src = np.zeros((12, nz, ny, nx))
     uo_src = np.zeros((12, nz, ny, nxq))
     vo_src = np.zeros((12, nz, nyq, nx))
 
-    so_src[0] = np.asarray(ds_z_hind["so"][0])
-    thetao_src[0] = np.asarray(ds_z_hind["thetao"][0])
     uo_src[0] = np.asarray(ds_z_hind["uo"][0])
     vo_src[0] = np.asarray(ds_z_hind["vo"][0])
 
@@ -314,24 +308,12 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
         tmp_z = xr.open_dataset(path.join(fcst_hist, file))
         tmp_z = tmp_z.rename_vars({'salt': 'so', 'potT': 'thetao', 'u': 'uo', 'v': 'vo'})
         src_time.append(pd.Timestamp(tgt.year, tgt.month, 1))
-        so_src[idx] = np.asarray(tmp_z["so"][0])
-        thetao_src[idx] = np.asarray(tmp_z["thetao"][0])
         uo_src[idx] = np.asarray(tmp_z["uo"][0])
         vo_src[idx] = np.asarray(tmp_z["vo"][0])
         tmp_z.close()
 
-    if interp_tracer_daily:
-        _progress("INTERP", "Interpolating monthly tracer source fields (so/thetao) onto daily timeline")
-        ds["so"][0:nt - 1] = _interp_time_to_target(
-            so_src, src_time, target_time, ("time", "z", "yh", "xh")
-        )
-        ds["thetao"][0:nt - 1] = _interp_time_to_target(
-            thetao_src, src_time, target_time, ("time", "z", "yh", "xh")
-        )
-    else:
-        _progress("INTERP", "Keeping so/thetao as monthly source (step-wise hold); no daily interpolation")
-        ds["so"][0:nt - 1] = _hold_monthly_values_on_daily_grid(so_src, src_time, target_time)
-        ds["thetao"][0:nt - 1] = _hold_monthly_values_on_daily_grid(thetao_src, src_time, target_time)
+    # NOTE: thetao/so processing intentionally disabled per workflow request.
+    _progress("INTERP", "Skipping thetao/so generation; producing only zos + uv OBC outputs")
 
     ds["zos"][0:nt - 1] = np.asarray(
         xr.concat(
@@ -347,8 +329,6 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     # Apply NaN mask from a reference forecast month onto t=0
     mask_idx = min(8, nt - 2)
     ds["zos"][0] = ds["zos"][0].where(~ds["zos"].isel(time=mask_idx).isnull())
-    ds["thetao"][0] = ds["thetao"][0].where(~ds["thetao"].isel(time=mask_idx).isnull())
-    ds["so"][0] = ds["so"][0].where(~ds["so"].isel(time=mask_idx).isnull())
 
     _progress("PAD", "Padding final extra time step")
     # ==========================================
@@ -357,8 +337,6 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     # ==========================================
     # Duplicate the final available daily state into the extra slot
     ds["zos"][nt - 1, :, :] = ds["zos"][nt - 2, :, :]
-    ds["so"][nt - 1, :, :, :] = ds["so"][nt - 2, :, :, :]
-    ds["thetao"][nt - 1, :, :, :] = ds["thetao"][nt - 2, :, :, :]
 
     # ==========================================
     # Step 4: Load NEP static grid (2D lon/lat)
@@ -468,7 +446,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                 seg.to_netcdf(out_uv, "uv", suffix=year)
 
     for var in variables:
-        if var in ["zos", "uv"]:
+        if var in ["zos", "uv", "so", "thetao"]:
             continue
 
         if var in ds:
