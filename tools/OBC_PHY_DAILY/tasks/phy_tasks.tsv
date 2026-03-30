@@ -1,0 +1,3 @@
+year	month	ensemble	obc_phy_config
+2012	01	01	/tmp/obc_phy_daily_cfg/2012/01/e01/obc_phy.yaml
+2012	01	02	/tmp/obc_phy_daily_cfg/2012/01/e02/obc_phy.yaml
