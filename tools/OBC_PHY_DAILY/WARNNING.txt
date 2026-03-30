@@ -1,0 +1,18 @@
+OBC zero-value scan report
+PHY directory: /work5/rnp/IC-BC-GOA/CEFI-regional-MOM6/tools/forecast_multi_proc/outputs/2012/04/OBC/PHY/e02
+BGC directory: /work5/rnp/IC-BC-GOA/CEFI-regional-MOM6/tools/forecast_multi_proc/outputs/2012/04/OBC/BGC/e02
+
+[PHY]
+OK: so_001_2012.nc
+OK: so_002_2012.nc
+OK: thetao_001_2012.nc
+OK: thetao_002_2012.nc
+OK: uv_001_2012.nc
+OK: uv_002_2012.nc
+OK: zos_001_2012.nc
+OK: zos_002_2012.nc
+
+[BGC]
+OK: bgc_obc_2012_04_e02.nc
+
+Total warnings: 0
