@@ -6,9 +6,9 @@ What this directory runs:
 - IC stage
 - OBC BGC stage
 - OBC PHY stage with:
-  - `thetao` and `so` OBC generation enabled
   - daily SSH (`zos`) from `ocean_daily.nc` (hindcast t=0 + forecast t=1..)
   - `uv` monthly-to-daily interpolation for OBC output
+  - PHY OBC daily `zos`/`uv` behavior copied exactly from `tools/OBC_PHY_DAILY`
 
 Original directories were not modified:
 - `tools/forecast_multi_proc/`

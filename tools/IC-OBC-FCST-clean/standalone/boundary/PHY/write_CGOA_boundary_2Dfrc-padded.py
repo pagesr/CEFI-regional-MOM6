@@ -263,8 +263,6 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
             time_bnds=(("time", "nv"), time_bnds),
 
             zos    =(("time", "yh", "xh"), np.zeros((nt, ny, nx))),
-            so     =(("time", "z", "yh", "xh"), np.zeros((nt, nz, ny, nx))),
-            thetao =(("time", "z", "yh", "xh"), np.zeros((nt, nz, ny, nx))),
         ),
         coords=coords
     )
@@ -296,13 +294,9 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     ds_z_hind = ds_z_hind.rename({'Salt': 'so', 'Temp': 'thetao', 'u': 'uo', 'v': 'vo'})
 
     src_time = [pd.Timestamp(int(year), int(month), 1)]
-    so_src = np.zeros((12, nz, ny, nx))
-    thetao_src = np.zeros((12, nz, ny, nx))
     uo_src = np.zeros((12, nz, ny, nxq))
     vo_src = np.zeros((12, nz, nyq, nx))
 
-    so_src[0] = np.asarray(ds_z_hind["so"][0])
-    thetao_src[0] = np.asarray(ds_z_hind["thetao"][0])
     uo_src[0] = np.asarray(ds_z_hind["uo"][0])
     vo_src[0] = np.asarray(ds_z_hind["vo"][0])
 
@@ -314,11 +308,12 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
         tmp_z = xr.open_dataset(path.join(fcst_hist, file))
         tmp_z = tmp_z.rename_vars({'salt': 'so', 'potT': 'thetao', 'u': 'uo', 'v': 'vo'})
         src_time.append(pd.Timestamp(tgt.year, tgt.month, 1))
-        so_src[idx] = np.asarray(tmp_z["so"][0])
-        thetao_src[idx] = np.asarray(tmp_z["thetao"][0])
         uo_src[idx] = np.asarray(tmp_z["uo"][0])
         vo_src[idx] = np.asarray(tmp_z["vo"][0])
         tmp_z.close()
+
+    # NOTE: thetao/so processing intentionally disabled per workflow request.
+    _progress("INTERP", "Skipping thetao/so generation; producing only zos + uv OBC outputs")
 
     ds["zos"][0:nt - 1] = np.asarray(
         xr.concat(
@@ -330,30 +325,10 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
         ).values
     )
 
-    _progress("INTERP", "Interpolating thetao/so monthly source onto daily target timeline")
-    src_monthly_time = pd.DatetimeIndex(src_time)
-    pad_monthly_time = src_monthly_time.append(pd.DatetimeIndex([src_monthly_time[-1] + pd.DateOffset(months=1)]))
-
-    so_daily = xr.DataArray(
-        np.concatenate([so_src, so_src[-1:]], axis=0),
-        dims=("time", "z", "yh", "xh"),
-        coords={"time": pad_monthly_time},
-    ).interp(time=all_times, kwargs={"fill_value": "extrapolate"})
-    thetao_daily = xr.DataArray(
-        np.concatenate([thetao_src, thetao_src[-1:]], axis=0),
-        dims=("time", "z", "yh", "xh"),
-        coords={"time": pad_monthly_time},
-    ).interp(time=all_times, kwargs={"fill_value": "extrapolate"})
-
-    ds["so"][:] = np.asarray(so_daily.values)
-    ds["thetao"][:] = np.asarray(thetao_daily.values)
-
     _progress("MASK", "Applying t=0 NaN mask from reference daily index")
     # Apply NaN mask from a reference forecast month onto t=0
     mask_idx = min(8, nt - 2)
     ds["zos"][0] = ds["zos"][0].where(~ds["zos"].isel(time=mask_idx).isnull())
-    ds["thetao"][0] = ds["thetao"][0].where(~ds["thetao"].isel(time=mask_idx).isnull())
-    ds["so"][0] = ds["so"][0].where(~ds["so"].isel(time=mask_idx).isnull())
 
     _progress("PAD", "Padding final extra time step")
     # ==========================================
@@ -471,7 +446,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                 seg.to_netcdf(out_uv, "uv", suffix=year)
 
     for var in variables:
-        if var in ["zos", "uv"]:
+        if var in ["zos", "uv", "so", "thetao"]:
             continue
 
         if var in ds:
