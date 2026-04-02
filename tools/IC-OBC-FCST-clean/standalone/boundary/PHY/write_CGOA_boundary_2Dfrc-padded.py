@@ -178,6 +178,14 @@ def _find_ssh_var_name(ds: xr.Dataset) -> str:
     )
 
 
+def _safe_rename_vars(ds: xr.Dataset, rename_map: dict[str, str]) -> xr.Dataset:
+    """Rename only variables that exist in dataset."""
+    existing = {k: v for k, v in rename_map.items() if k in ds.variables and k != v}
+    if not existing:
+        return ds
+    return ds.rename_vars(existing)
+
+
 def _progress(tag, message):
     print(f"[PHY-OBC][{tag}] {message}", flush=True)
 
@@ -291,14 +299,18 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     )
     print(f"[PHY-OBC] Loaded restart: {path.join(rst_dir, f'restdate_{year}{month}01/MOM_{year}{month}01.res.nc')}")
 
-    ds_z_hind = ds_z_hind.rename({'Salt': 'so', 'Temp': 'thetao', 'u': 'uo', 'v': 'vo'})
+    ds_z_hind = _safe_rename_vars(ds_z_hind, {'Salt': 'so', 'Temp': 'thetao', 'u': 'uo', 'v': 'vo'})
 
     src_time = [pd.Timestamp(int(year), int(month), 1)]
-    uo_src = np.zeros((12, nz, ny, nxq))
-    vo_src = np.zeros((12, nz, nyq, nx))
+    so_src = np.zeros((12, nz, ny, nx), dtype=np.float32)
+    thetao_src = np.zeros((12, nz, ny, nx), dtype=np.float32)
+    uo_src = np.zeros((12, nz, ny, nxq), dtype=np.float32)
+    vo_src = np.zeros((12, nz, nyq, nx), dtype=np.float32)
 
-    uo_src[0] = np.asarray(ds_z_hind["uo"][0])
-    vo_src[0] = np.asarray(ds_z_hind["vo"][0])
+    so_src[0] = np.asarray(ds_z_hind["so"][0], dtype=np.float32)
+    thetao_src[0] = np.asarray(ds_z_hind["thetao"][0], dtype=np.float32)
+    uo_src[0] = np.asarray(ds_z_hind["uo"][0], dtype=np.float32)
+    vo_src[0] = np.asarray(ds_z_hind["vo"][0], dtype=np.float32)
 
     start_ts = pd.Timestamp(int(year), int(month), 1)
     for idx, offset in enumerate(range(1, 12), start=1):
@@ -306,14 +318,27 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
         file = f"oceanm_{tgt.year}_{tgt.month:02d}.nc"
         _progress("SRC", f"Loading monthly file {idx}/11: {file}")
         tmp_z = xr.open_dataset(path.join(fcst_hist, file))
-        tmp_z = tmp_z.rename_vars({'salt': 'so', 'potT': 'thetao', 'u': 'uo', 'v': 'vo'})
+        tmp_z = _safe_rename_vars(tmp_z, {'salt': 'so', 'potT': 'thetao', 'temp': 'thetao', 'u': 'uo', 'v': 'vo'})
         src_time.append(pd.Timestamp(tgt.year, tgt.month, 1))
-        uo_src[idx] = np.asarray(tmp_z["uo"][0])
-        vo_src[idx] = np.asarray(tmp_z["vo"][0])
+        so_src[idx] = np.asarray(tmp_z["so"][0], dtype=np.float32)
+        thetao_src[idx] = np.asarray(tmp_z["thetao"][0], dtype=np.float32)
+        uo_src[idx] = np.asarray(tmp_z["uo"][0], dtype=np.float32)
+        vo_src[idx] = np.asarray(tmp_z["vo"][0], dtype=np.float32)
         tmp_z.close()
 
-    # NOTE: thetao/so processing intentionally disabled per workflow request.
-    _progress("INTERP", "Skipping thetao/so generation; producing only zos + uv OBC outputs")
+    src_time_index = pd.DatetimeIndex(src_time)
+    tracer_time_index: pd.DatetimeIndex
+    tracer_sources: dict[str, np.ndarray] = {}
+    if interp_tracer_daily:
+        _progress("INTERP", "Preparing thetao/so on daily OBC time grid")
+        tracer_time_index = all_times
+        tracer_sources["so"] = _hold_monthly_values_on_daily_grid(so_src, src_time_index, all_times)
+        tracer_sources["thetao"] = _hold_monthly_values_on_daily_grid(thetao_src, src_time_index, all_times)
+    else:
+        _progress("INTERP", "Preparing thetao/so on monthly OBC time grid (with padded last month)")
+        tracer_time_index = src_time_index.append(pd.DatetimeIndex([src_time_index[-1] + pd.DateOffset(months=1)]))
+        tracer_sources["so"] = np.concatenate([so_src, so_src[-1:]], axis=0)
+        tracer_sources["thetao"] = np.concatenate([thetao_src, thetao_src[-1:]], axis=0)
 
     ds["zos"][0:nt - 1] = np.asarray(
         xr.concat(
@@ -391,7 +416,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
 
     if "uv" in variables:
         _progress("REGRID", "Regridding variable group: uv")
-        uv_monthly_time = pd.DatetimeIndex(src_time)
+        uv_monthly_time = src_time_index
         uo_monthly = xr.DataArray(
             uo_src,
             dims=("time", "z", "yh", "xq"),
@@ -446,10 +471,39 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                 seg.to_netcdf(out_uv, "uv", suffix=year)
 
     for var in variables:
-        if var in ["zos", "uv", "so", "thetao"]:
+        if var in ["zos", "uv"]:
             continue
 
-        if var in ds:
+        if var in tracer_sources:
+            tracer_time = tracer_time_index
+            tracer_vals = tracer_sources[var]
+            tracer = xr.DataArray(
+                tracer_vals,
+                dims=("time", "z", "yh", "xh"),
+                coords={"time": tracer_time, "z": np.arange(nz), "yh": np.arange(ny), "xh": np.arange(nx)},
+                name=var,
+            )
+            _progress(
+                "REGRID",
+                f"Regridding tracer variable: {var} "
+                f"({'daily-held' if interp_tracer_daily else 'monthly'})",
+            )
+            tracer = _attach_2d_lonlat(tracer, lonT, latT, name=var)
+            for seg in segments:
+                _progress("REGRID", f"segment={seg.border} var={var}")
+                out = seg.regrid_tracer(
+                    tracer, suffix=year, flood=False, weight_save=weight_save,
+                    time_attrs=time_attrs, time_encoding=time_encoding
+                )
+                tkey = f"{var}_{seg.segstr}"
+                if tkey in out and _all_finite_values_zero(out[tkey]):
+                    print(f"[PHY-OBC] WARNING: {tkey} is all zeros. Regenerating tracer weights and retrying once.")
+                    _remove_if_exists(path.join(seg.regrid_dir, f"regrid_{seg.segstr}_t.nc"))
+                    seg.regrid_tracer(
+                        tracer, suffix=year, flood=False, weight_save=weight_save,
+                        time_attrs=time_attrs, time_encoding=time_encoding
+                    )
+        elif var in ds:
             _progress("REGRID", f"Regridding tracer variable: {var}")
             for seg in segments:
                 print(ds[var].shape)
@@ -531,7 +585,7 @@ def main(config_file):
     ncrcat_years_flag = cfg.get("ncrcat_years", False)
     ncrcat_names = cfg.get("ncrcat_names", [])
     weight_save = bool(cfg.get("weight_save", True))
-    interp_tracer_daily = bool(cfg.get("interp_tracer_daily", True))
+    interp_tracer_daily = bool(cfg.get("interp_tracer_daily", False))
     regrid_dir = cfg.get("regrid_dir", output_dir)
 
     nep_static = _require(cfg, "NEP_STATIC")
