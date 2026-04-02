@@ -1,11 +1,11 @@
-forecast_multi_proc — Full Workflow Documentation (IC + OBC, multi-process)
-=======================================================================
+IC-OBC-FCST-clean — Full Workflow Documentation (IC + OBC, multi-process)
+==========================================================================
 
 Scope
 -----
 This document describes ONLY what exists under:
 
-  tools/forecast_multi_proc
+  tools/IC-OBC-FCST-clean
 
 It explains:
 - workflow architecture and execution order
@@ -14,6 +14,71 @@ It explains:
 - interpolation/regridding methods used
 - why UV is run with no rotation in this workflow
 - IC and OBC source simulations (hindcast/forecast)
+
+
+Paper-ready Materials & Methods summary (IC-OBC-FCST-clean)
+------------------------------------------------------------
+Use this section directly in a manuscript Methods section (edit paths/years as needed).
+
+A) Workflow package and execution model
+- Workflow used: `tools/IC-OBC-FCST-clean` (standalone Slurm workflow).
+- Three stages are generated:
+  1) Initial conditions (IC; physics + BGC),
+  2) Physical open boundaries (PHY OBC),
+  3) Biogeochemical open boundaries (BGC OBC).
+- Slurm arrays execute stage tasks built from per-case YAML configs and TSV task lists.
+
+B) Physical boundary treatment used in this workflow
+- `zos` and `uv` are produced on a daily OBC timeline (hindcast day-0 + forecast day-1 onward, plus padded extra final step).
+- `thetao` and `so` are produced on monthly timeline (restart + 11 forecast monthly files, plus padded final month).
+- To ensure robust tracer production, PHY execution is split into two passes:
+  - tracer pass (`thetao`,`so`) and
+  - daily pass (`uv`,`zos`).
+- Segment regridding is done with xESMF through `boundary.py` utilities.
+- For UV, this workflow uses `rotate=False` in the PHY OBC driver.
+
+C) Source simulations and static grids
+- GOA static grid (target): CGOA static grid file configured in `generate_configs.py`.
+- NEP static grid (source): NEP static file configured in `generate_configs.py`.
+- Hindcast restart source (IC and initial OBC state): `MOM_YYYYMM01.res.nc`.
+- Hindcast daily history source (daily `zos` anchor): `.../history/YYYY0101/ocean_daily.nc`.
+- Forecast source root: `.../NEPbgc_fcst_dailyOB01/YYYY-MM-eNN/history/`.
+- Forecast monthly files used for physics tracers/UV source:
+  `oceanm_YYYY_MM.nc` sequence for the next 11 months.
+
+D) Regridding / interpolation settings
+- Regridding engine: xESMF.
+- Default interpolation method in templates: `nearest_s2d`.
+- Tracer OBC: `seg.regrid_tracer(... flood=False)`.
+- Velocity OBC: `seg.regrid_velocity(... flood=False, rotate=False)`.
+- Regridding weights are cached in shared `regrid_*` directories and reused.
+- If a regridded field is detected all-zero, the corresponding weight file is removed and regenerated once.
+
+E) Reproducible command used to run all stages
+From `tools/IC-OBC-FCST-clean`:
+
+  python submit_workflow.py \
+    --years 2013 \
+    --months 01 \
+    --ensembles 01 \
+    --output-root ./output \
+    --config-root ./generated_configs \
+    --task-root ./tasks
+
+Notes:
+- `--output-root` is resolved to an absolute path at submit time.
+- Add `--force` only when re-running existing outputs/markers.
+- Do NOT pass `--no-ic-dependency` for normal IC -> PHY/BGC dependency behavior.
+
+F) Output products and QC artifacts
+- IC outputs: `output/YYYY/MM/IC/` (physics + BGC IC files, marker files).
+- PHY OBC outputs: `output/YYYY/MM/OBC/PHY/eNN/` (thetao/so/uv/zos by segment).
+- BGC OBC outputs: `output/YYYY/MM/OBC/BGC/eNN/` (tracer-by-segment outputs).
+- Runtime logs: `output/logs/` including stage-specific logs
+  (`*_ic_phy.log`, `*_ic_bgc.log`, `*_phy_obc_*.log`, `*_bgc_obc.log`).
+- Optional QA:
+  - `check_obc_all_zero.py` for all-zero diagnostics,
+  - BGC postprocess scripts for merged output products.
 
 
 1) High-level purpose
@@ -39,7 +104,7 @@ Parallel execution is done with Slurm arrays.
 
 2) Directory map
 ----------------
-Main files at tools/forecast_multi_proc:
+Main files at tools/IC-OBC-FCST-clean:
 
 - README.md
   Short overview.
@@ -447,5 +512,3 @@ After running:
 
 
 End of file
-
-

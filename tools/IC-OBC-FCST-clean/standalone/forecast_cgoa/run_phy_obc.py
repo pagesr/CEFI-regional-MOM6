@@ -11,7 +11,13 @@ import yaml
 
 from utils.helpers import ensure_dir, expected_marker_file, write_marker
 from utils.logging_utils import run_command
-from utils.paths import DEFAULT_LOG_ROOT, PHY_OBC_DIR, PHY_OBC_SCRIPT
+from utils.paths import (
+    DEFAULT_LOG_ROOT,
+    PHY_OBC_DIR,
+    PHY_OBC_SCRIPT,
+    PHY_OBC_TRACER_DIR,
+    PHY_OBC_TRACER_SCRIPT,
+)
 
 
 def _expected_phy_outputs(cfg: dict, year: str) -> list[Path]:
@@ -69,11 +75,36 @@ def run_phy_obc(config: Path, year: str, month: str, ensemble: str, output_root:
             f"{fcst_hist}. Check fct_dir/ensemble mapping in generated obc_phy config."
         )
 
-    run_command(
-        [sys.executable, PHY_OBC_SCRIPT.name, "--config", str(config)],
-        cwd=PHY_OBC_DIR,
-        log_file=DEFAULT_LOG_ROOT / f"{year}_{month}_e{ensemble}_phy_obc.log",
-    )
+    base_cfg = dict(cfg)
+    uv_zos_vars = [v for v in base_cfg.get("variables", []) if v in {"uv", "zos"}]
+    tracer_vars = [v for v in base_cfg.get("variables", []) if v in {"thetao", "so"}]
+
+    if tracer_vars:
+        tracer_cfg = dict(base_cfg)
+        tracer_cfg["variables"] = tracer_vars
+        tracer_cfg["ncrcat_names"] = [v for v in base_cfg.get("ncrcat_names", []) if v in tracer_vars]
+        tracer_tmp = out_dir / f"obc_phy_tracers_{year}{month}_e{ensemble}.yaml"
+        with tracer_tmp.open("w", encoding="utf-8") as stream:
+            yaml.safe_dump(tracer_cfg, stream, sort_keys=False)
+        run_command(
+            [sys.executable, PHY_OBC_TRACER_SCRIPT.name, "--config", str(tracer_tmp)],
+            cwd=PHY_OBC_TRACER_DIR,
+            log_file=DEFAULT_LOG_ROOT / f"{year}_{month}_e{ensemble}_phy_obc_tracers.log",
+        )
+
+    if uv_zos_vars:
+        uv_cfg = dict(base_cfg)
+        uv_cfg["variables"] = uv_zos_vars
+        uv_cfg["ncrcat_names"] = [v for v in base_cfg.get("ncrcat_names", []) if v in uv_zos_vars]
+        uv_tmp = out_dir / f"obc_phy_uvzos_{year}{month}_e{ensemble}.yaml"
+        with uv_tmp.open("w", encoding="utf-8") as stream:
+            yaml.safe_dump(uv_cfg, stream, sort_keys=False)
+        run_command(
+            [sys.executable, PHY_OBC_SCRIPT.name, "--config", str(uv_tmp)],
+            cwd=PHY_OBC_DIR,
+            log_file=DEFAULT_LOG_ROOT / f"{year}_{month}_e{ensemble}_phy_obc_uvzos.log",
+        )
+
     print(f"[OBC-PHY] finished script run for {year}-{month} e{ensemble}")
     write_marker(f"phy_obc_e{ensemble}", out_dir)
     print(f"[OBC-PHY] wrote marker: {marker}")
