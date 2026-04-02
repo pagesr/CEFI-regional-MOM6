@@ -178,6 +178,14 @@ def _find_ssh_var_name(ds: xr.Dataset) -> str:
     )
 
 
+def _safe_rename_vars(ds: xr.Dataset, rename_map: dict[str, str]) -> xr.Dataset:
+    """Rename only variables that exist in dataset."""
+    existing = {k: v for k, v in rename_map.items() if k in ds.variables and k != v}
+    if not existing:
+        return ds
+    return ds.rename_vars(existing)
+
+
 def _progress(tag, message):
     print(f"[PHY-OBC][{tag}] {message}", flush=True)
 
@@ -291,18 +299,18 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     )
     print(f"[PHY-OBC] Loaded restart: {path.join(rst_dir, f'restdate_{year}{month}01/MOM_{year}{month}01.res.nc')}")
 
-    ds_z_hind = ds_z_hind.rename({'Salt': 'so', 'Temp': 'thetao', 'u': 'uo', 'v': 'vo'})
+    ds_z_hind = _safe_rename_vars(ds_z_hind, {'Salt': 'so', 'Temp': 'thetao', 'u': 'uo', 'v': 'vo'})
 
     src_time = [pd.Timestamp(int(year), int(month), 1)]
-    so_src = np.zeros((12, nz, ny, nx))
-    thetao_src = np.zeros((12, nz, ny, nx))
-    uo_src = np.zeros((12, nz, ny, nxq))
-    vo_src = np.zeros((12, nz, nyq, nx))
+    so_src = np.zeros((12, nz, ny, nx), dtype=np.float32)
+    thetao_src = np.zeros((12, nz, ny, nx), dtype=np.float32)
+    uo_src = np.zeros((12, nz, ny, nxq), dtype=np.float32)
+    vo_src = np.zeros((12, nz, nyq, nx), dtype=np.float32)
 
-    so_src[0] = np.asarray(ds_z_hind["so"][0])
-    thetao_src[0] = np.asarray(ds_z_hind["thetao"][0])
-    uo_src[0] = np.asarray(ds_z_hind["uo"][0])
-    vo_src[0] = np.asarray(ds_z_hind["vo"][0])
+    so_src[0] = np.asarray(ds_z_hind["so"][0], dtype=np.float32)
+    thetao_src[0] = np.asarray(ds_z_hind["thetao"][0], dtype=np.float32)
+    uo_src[0] = np.asarray(ds_z_hind["uo"][0], dtype=np.float32)
+    vo_src[0] = np.asarray(ds_z_hind["vo"][0], dtype=np.float32)
 
     start_ts = pd.Timestamp(int(year), int(month), 1)
     for idx, offset in enumerate(range(1, 12), start=1):
@@ -310,12 +318,12 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
         file = f"oceanm_{tgt.year}_{tgt.month:02d}.nc"
         _progress("SRC", f"Loading monthly file {idx}/11: {file}")
         tmp_z = xr.open_dataset(path.join(fcst_hist, file))
-        tmp_z = tmp_z.rename_vars({'salt': 'so', 'potT': 'thetao', 'u': 'uo', 'v': 'vo'})
+        tmp_z = _safe_rename_vars(tmp_z, {'salt': 'so', 'potT': 'thetao', 'temp': 'thetao', 'u': 'uo', 'v': 'vo'})
         src_time.append(pd.Timestamp(tgt.year, tgt.month, 1))
-        so_src[idx] = np.asarray(tmp_z["so"][0])
-        thetao_src[idx] = np.asarray(tmp_z["thetao"][0])
-        uo_src[idx] = np.asarray(tmp_z["uo"][0])
-        vo_src[idx] = np.asarray(tmp_z["vo"][0])
+        so_src[idx] = np.asarray(tmp_z["so"][0], dtype=np.float32)
+        thetao_src[idx] = np.asarray(tmp_z["thetao"][0], dtype=np.float32)
+        uo_src[idx] = np.asarray(tmp_z["uo"][0], dtype=np.float32)
+        vo_src[idx] = np.asarray(tmp_z["vo"][0], dtype=np.float32)
         tmp_z.close()
 
     src_time_index = pd.DatetimeIndex(src_time)
