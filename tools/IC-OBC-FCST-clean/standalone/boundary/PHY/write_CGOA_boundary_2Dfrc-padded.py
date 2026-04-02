@@ -190,6 +190,20 @@ def _progress(tag, message):
     print(f"[PHY-OBC][{tag}] {message}", flush=True)
 
 
+def _time_index_for_date(ds: xr.Dataset, target_date: pd.Timestamp, time_name: str = "time") -> int:
+    """Return the index for an exact calendar date in a dataset time coordinate."""
+    if time_name not in ds:
+        raise KeyError(f"Dataset has no '{time_name}' coordinate.")
+    time_vals = pd.to_datetime(ds[time_name].values).normalize()
+    matches = np.where(time_vals == target_date.normalize())[0]
+    if matches.size == 0:
+        raise ValueError(
+            f"Requested date {target_date.strftime('%Y-%m-%d')} was not found in "
+            f"dataset '{time_name}' coordinate (range: {time_vals.min()} .. {time_vals.max()})."
+        )
+    return int(matches[0])
+
+
 # ----------------------------
 # Core routine
 # ----------------------------
@@ -216,11 +230,20 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     fcst_ssh_var = _find_ssh_var_name(ds_sfc_fcst_daily)
     _progress("TIME", f"Using daily SSH vars hindcast={hind_ssh_var} forecast={fcst_ssh_var}")
 
+    ref = pd.Timestamp(year=int(year), month=int(month), day=1)
+    hind_ref_idx = _time_index_for_date(ds_sfc_hind_daily, ref)
+    fcst_ref_idx = _time_index_for_date(ds_sfc_fcst_daily, ref)
+    _progress(
+        "TIME",
+        f"Using reference date {ref.strftime('%Y-%m-%d')} "
+        f"(hind_idx={hind_ref_idx}, fcst_idx={fcst_ref_idx})",
+    )
+
     target_time = pd.DatetimeIndex(
         np.concatenate(
             [
-                pd.to_datetime(ds_sfc_hind_daily["time"].isel(time=slice(0, 1)).values),
-                pd.to_datetime(ds_sfc_fcst_daily["time"].isel(time=slice(1, None)).values),
+                pd.to_datetime(ds_sfc_hind_daily["time"].isel(time=slice(hind_ref_idx, hind_ref_idx + 1)).values),
+                pd.to_datetime(ds_sfc_fcst_daily["time"].isel(time=slice(fcst_ref_idx + 1, None)).values),
             ]
         )
     ).normalize()
@@ -239,8 +262,6 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     # -------------------------
     # BUILD CF TIME + BOUNDS
     # -------------------------
-    ref = pd.Timestamp(year=int(year), month=int(month), day=1)
-
     pad_time = target_time[-1] + pd.Timedelta(days=1)
     all_times = target_time.append(pd.DatetimeIndex([pad_time]))
     time_days = ((all_times - ref) / np.timedelta64(1, "D")).to_numpy(dtype="float64")
@@ -343,8 +364,8 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     ds["zos"][0:nt - 1] = np.asarray(
         xr.concat(
             [
-                ds_sfc_hind_daily[hind_ssh_var].isel(time=slice(0, 1)),
-                ds_sfc_fcst_daily[fcst_ssh_var].isel(time=slice(1, None)),
+                ds_sfc_hind_daily[hind_ssh_var].isel(time=slice(hind_ref_idx, hind_ref_idx + 1)),
+                ds_sfc_fcst_daily[fcst_ssh_var].isel(time=slice(fcst_ref_idx + 1, None)),
             ],
             dim="time",
         ).values
