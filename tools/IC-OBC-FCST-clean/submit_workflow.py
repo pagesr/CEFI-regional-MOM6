@@ -103,7 +103,7 @@ def main() -> None:
         help="Submit PHY/BGC arrays immediately (do not wait for IC array afterok).",
     )
     args = parser.parse_args()
-    output_root = Path(args.output_root)
+    output_root = Path(args.output_root).resolve()
     logs_dir = _resolve_slurm_logs_dir(output_root, args.slurm_log_dir)
     print(f"[LOGS] Using Slurm log directory: {logs_dir}")
 
