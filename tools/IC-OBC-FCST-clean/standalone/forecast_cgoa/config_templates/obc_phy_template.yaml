@@ -11,6 +11,7 @@ output_dir: "{OBC_PHY_ROOT}"
 hgrid: "{GOA_HGRID}"
 ncrcat_years: false
 weight_save: true
+interp_tracer_daily: false
 regrid_dir: "{REGRID_OBC_PHY_ROOT}"
 ncrcat_names:
   - thetao
