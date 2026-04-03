@@ -217,7 +217,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
 
     # Build daily time source from hindcast + forecast daily SSH.
     _progress("TIME", "Opening hindcast/forecast daily SSH files")
-    hind_daily_file = path.join(glorys_dir, f"{year}0101/ocean_daily.nc")
+    hind_daily_file = path.join(glorys_dir, f"{int(year):04d}{int(month):02d}01/ocean_daily.nc")
     ds_sfc_hind_daily = xr.open_dataset(hind_daily_file)
     print(f"[PHY-OBC] Loaded hindcast daily file: {hind_daily_file}")
 
