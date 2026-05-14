@@ -12,6 +12,9 @@ hgrid: "{GOA_HGRID}"
 ncrcat_years: false
 weight_save: true
 interp_tracer_daily: false
+diagnostic_plots: true
+diagnostic_time_index: 0
+diagnostic_z_index: 0
 regrid_dir: "{REGRID_OBC_PHY_ROOT}"
 ncrcat_names:
   - thetao
