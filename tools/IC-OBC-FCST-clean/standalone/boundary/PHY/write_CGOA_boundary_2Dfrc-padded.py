@@ -48,6 +48,7 @@ from os import path
 import os
 import argparse
 import warnings
+import importlib.util
 import yaml
 import xarray as xr
 import glob
@@ -125,6 +126,142 @@ def _attach_2d_lonlat(da, lon2d, lat2d, dims_expected=None, name="var"):
     da["lat"].attrs.update({"standard_name": "latitude", "units": "degrees_north"})
     return da
 
+
+
+def _select_time_z_slice(da: xr.DataArray, time_index=0, z_index=0) -> xr.DataArray:
+    """Return a 2D horizontal or 1D boundary slice for diagnostics."""
+    out = da
+    if "time" in out.dims:
+        idx = min(max(int(time_index), 0), out.sizes["time"] - 1)
+        out = out.isel(time=idx)
+    z_dims = [d for d in out.dims if d == "z" or d.startswith("nz_")]
+    if z_dims:
+        zdim = z_dims[0]
+        idx = min(max(int(z_index), 0), out.sizes[zdim] - 1)
+        out = out.isel({zdim: idx})
+    return out.squeeze(drop=True)
+
+
+def _nearest_source_profile(source: xr.DataArray, target_lon, target_lat, time_index=0, z_index=0):
+    """Sample a source field at nearest source-grid points to a target boundary."""
+    src = _select_time_z_slice(source, time_index=time_index, z_index=z_index)
+    if "lon" not in src.coords or "lat" not in src.coords:
+        raise ValueError(f"{source.name}: diagnostic source field has no lon/lat coordinates")
+
+    src_vals = np.asarray(src.values, dtype="float64")
+    lon = np.asarray(src["lon"].values, dtype="float64")
+    lat = np.asarray(src["lat"].values, dtype="float64")
+    tgt_lon = np.asarray(target_lon, dtype="float64").ravel()
+    tgt_lat = np.asarray(target_lat, dtype="float64").ravel()
+
+    valid = np.isfinite(src_vals) & np.isfinite(lon) & np.isfinite(lat)
+    if not valid.any():
+        return np.full_like(tgt_lon, np.nan, dtype="float64"), np.full_like(tgt_lon, np.nan, dtype="float64")
+
+    src_vals_flat = src_vals[valid]
+    lon_flat = lon[valid]
+    lat_flat = lat[valid]
+    profile = np.full(tgt_lon.shape, np.nan, dtype="float64")
+    dist = np.full(tgt_lon.shape, np.nan, dtype="float64")
+
+    # Avoid constructing a full target x source distance matrix for large grids.
+    for start in range(0, tgt_lon.size, 32):
+        stop = min(start + 32, tgt_lon.size)
+        lon_chunk = tgt_lon[start:stop, None]
+        lat_chunk = tgt_lat[start:stop, None]
+        scale = np.cos(np.deg2rad(lat_chunk))
+        d2 = ((lon_flat[None, :] - lon_chunk) * scale) ** 2 + (lat_flat[None, :] - lat_chunk) ** 2
+        idx = np.nanargmin(d2, axis=1)
+        profile[start:stop] = src_vals_flat[idx]
+        dist[start:stop] = np.sqrt(d2[np.arange(stop - start), idx])
+
+    return profile, dist
+
+
+def _boundary_profile(da: xr.DataArray, seg: Segment, time_index=0, z_index=0):
+    """Return a 1D GOA OBC profile from a regridded segment DataArray."""
+    out = _select_time_z_slice(da, time_index=time_index, z_index=z_index)
+    for dim in list(out.dims):
+        if out.sizes[dim] == 1:
+            out = out.isel({dim: 0}, drop=True)
+    seg_dim = f"nx_{seg.segstr}" if seg.border in ["south", "north"] else f"ny_{seg.segstr}"
+    if seg_dim in out.dims:
+        return np.asarray(out.values, dtype="float64")
+    if out.ndim == 1:
+        return np.asarray(out.values, dtype="float64")
+    raise ValueError(f"Could not find 1D segment dimension {seg_dim} in {da.name}; dims={out.dims}")
+
+
+def _plot_boundary_diagnostic(
+        source: xr.DataArray,
+        regridded: xr.DataArray,
+        seg: Segment,
+        var_name: str,
+        year,
+        month,
+        ensemble,
+        output_dir,
+        time_index=0,
+        z_index=0):
+    """Write a NEP-nearest-source vs GOA-OBC profile diagnostic figure."""
+    if importlib.util.find_spec("matplotlib") is None:
+        print("[PHY-OBC][DIAG] matplotlib is not available; skipping boundary diagnostic plots", flush=True)
+        return
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    diag_dir = path.join(output_dir, "diagnostics", "boundary_profiles")
+    os.makedirs(diag_dir, exist_ok=True)
+
+    target_lon = np.asarray(seg.coords["lon"].values, dtype="float64")
+    target_lat = np.asarray(seg.coords["lat"].values, dtype="float64")
+    nep_profile, dist = _nearest_source_profile(
+        source, target_lon, target_lat, time_index=time_index, z_index=z_index
+    )
+    goa_profile = _boundary_profile(
+        regridded, seg, time_index=time_index, z_index=z_index
+    )
+    n = min(nep_profile.size, goa_profile.size)
+    x = np.arange(n)
+
+    fig, axes = plt.subplots(2, 1, figsize=(12, 7), sharex=True, constrained_layout=True)
+    axes[0].plot(x, nep_profile[:n], label="NEP nearest source", linewidth=1.4)
+    axes[0].plot(x, goa_profile[:n], label="GOA regridded OBC", linewidth=1.1, alpha=0.85)
+    axes[0].set_ylabel(var_name)
+    axes[0].set_title(
+        f"{var_name} {seg.segstr} ({seg.border}) {year}-{month} e{ensemble} "
+        f"time_idx={time_index} z_idx={z_index}"
+    )
+    axes[0].legend(loc="best")
+    axes[0].grid(True, alpha=0.3)
+
+    axes[1].plot(x, goa_profile[:n] - nep_profile[:n], label="GOA - NEP nearest", color="tab:red")
+    axes[1].set_xlabel("Boundary point index as written to OBC file")
+    axes[1].set_ylabel("difference")
+    axes[1].grid(True, alpha=0.3)
+    ax2 = axes[1].twinx()
+    ax2.plot(x, dist[:n], label="nearest distance (deg)", color="0.5", alpha=0.55)
+    ax2.set_ylabel("nearest distance (deg)")
+
+    # Include endpoint coordinates in the figure as a quick orientation check.
+    endpoint_text = (
+        f"first lon/lat=({target_lon[0]:.4f}, {target_lat[0]:.4f})\n"
+        f"last lon/lat=({target_lon[-1]:.4f}, {target_lat[-1]:.4f})"
+    )
+    axes[0].text(
+        0.01, 0.02, endpoint_text, transform=axes[0].transAxes,
+        ha="left", va="bottom", fontsize=9,
+        bbox={"facecolor": "white", "alpha": 0.75, "edgecolor": "0.8"},
+    )
+
+    outfile = path.join(
+        diag_dir,
+        f"{var_name}_{seg.num:03d}_{year}{str(month).zfill(2)}_e{str(ensemble).zfill(2)}_profile.png",
+    )
+    fig.savefig(outfile, dpi=150)
+    plt.close(fig)
+    print(f"[PHY-OBC][DIAG] wrote {outfile}", flush=True)
 
 def _all_finite_values_zero(da, atol=1e-14):
     vals = np.asarray(da.values)
@@ -208,7 +345,8 @@ def _time_index_for_date(ds: xr.Dataset, target_date: pd.Timestamp, time_name: s
 # Core routine
 # ----------------------------
 def write_year(year, glorys_dir, nep_static, segments, variables, month, ensemble, fct_dir, rst_dir,
-               is_first_year=False, is_last_year=False, weight_save=True, interp_tracer_daily=True):
+               is_first_year=False, is_last_year=False, weight_save=True, interp_tracer_daily=True,
+               diagnostic_plots=False, diagnostic_time_index=0, diagnostic_z_index=0):
     _progress(
         "START",
         f"[PHY-OBC] ==== write_year year={year} month={month} ensemble={ensemble} "
@@ -434,6 +572,11 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                     tracer, suffix=year, flood=False, weight_save=weight_save,
                     time_attrs=time_attrs, time_encoding=time_encoding
                 )
+            if diagnostic_plots and zkey in out:
+                _plot_boundary_diagnostic(
+                    tracer, out[zkey], seg, "zos", year, month, ensemble, output_dir,
+                    time_index=diagnostic_time_index, z_index=diagnostic_z_index,
+                )
 
     if "uv" in variables:
         _progress("REGRID", "Regridding variable group: uv")
@@ -466,6 +609,19 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
             out_uv["time"].attrs = time_attrs
             out_uv["time"].encoding = time_encoding
             seg.to_netcdf(out_uv, "uv", suffix=year)
+            if diagnostic_plots:
+                ukey_diag = f"u_{seg.segstr}"
+                vkey_diag = f"v_{seg.segstr}"
+                if ukey_diag in out_uv:
+                    _plot_boundary_diagnostic(
+                        uo_m, out_uv[ukey_diag], seg, "u", year, month, ensemble, output_dir,
+                        time_index=diagnostic_time_index, z_index=diagnostic_z_index,
+                    )
+                if vkey_diag in out_uv:
+                    _plot_boundary_diagnostic(
+                        vo_m, out_uv[vkey_diag], seg, "v", year, month, ensemble, output_dir,
+                        time_index=diagnostic_time_index, z_index=diagnostic_z_index,
+                    )
 
             ukey = f"u_{seg.segstr}"
             vkey = f"v_{seg.segstr}"
@@ -490,6 +646,17 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                 out_uv["time"].attrs = time_attrs
                 out_uv["time"].encoding = time_encoding
                 seg.to_netcdf(out_uv, "uv", suffix=year)
+                if diagnostic_plots:
+                    if ukey in out_uv:
+                        _plot_boundary_diagnostic(
+                            uo_m, out_uv[ukey], seg, "u", year, month, ensemble, output_dir,
+                            time_index=diagnostic_time_index, z_index=diagnostic_z_index,
+                        )
+                    if vkey in out_uv:
+                        _plot_boundary_diagnostic(
+                            vo_m, out_uv[vkey], seg, "v", year, month, ensemble, output_dir,
+                            time_index=diagnostic_time_index, z_index=diagnostic_z_index,
+                        )
 
     for var in variables:
         if var in ["zos", "uv"]:
@@ -497,11 +664,12 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
 
         if var in tracer_sources:
             tracer_time = tracer_time_index
+            tracer_time_days = ((tracer_time - ref) / np.timedelta64(1, "D")).to_numpy(dtype="float64")
             tracer_vals = tracer_sources[var]
             tracer = xr.DataArray(
                 tracer_vals,
                 dims=("time", "z", "yh", "xh"),
-                coords={"time": tracer_time, "z": np.arange(nz), "yh": np.arange(ny), "xh": np.arange(nx)},
+                coords={"time": tracer_time_days, "z": np.arange(nz), "yh": np.arange(ny), "xh": np.arange(nx)},
                 name=var,
             )
             _progress(
@@ -523,6 +691,11 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                     seg.regrid_tracer(
                         tracer, suffix=year, flood=False, weight_save=weight_save,
                         time_attrs=time_attrs, time_encoding=time_encoding
+                    )
+                if diagnostic_plots and tkey in out:
+                    _plot_boundary_diagnostic(
+                        tracer, out[tkey], seg, var, year, month, ensemble, output_dir,
+                        time_index=diagnostic_time_index, z_index=diagnostic_z_index,
                     )
         elif var in ds:
             _progress("REGRID", f"Regridding tracer variable: {var}")
@@ -607,6 +780,9 @@ def main(config_file):
     ncrcat_names = cfg.get("ncrcat_names", [])
     weight_save = bool(cfg.get("weight_save", True))
     interp_tracer_daily = bool(cfg.get("interp_tracer_daily", False))
+    diagnostic_plots = bool(cfg.get("diagnostic_plots", False))
+    diagnostic_time_index = int(cfg.get("diagnostic_time_index", 0))
+    diagnostic_z_index = int(cfg.get("diagnostic_z_index", 0))
     regrid_dir = cfg.get("regrid_dir", output_dir)
 
     nep_static = _require(cfg, "NEP_STATIC")
@@ -646,6 +822,9 @@ def main(config_file):
             is_last_year=(y == last_year),
             weight_save=weight_save,
             interp_tracer_daily=interp_tracer_daily,
+            diagnostic_plots=diagnostic_plots,
+            diagnostic_time_index=diagnostic_time_index,
+            diagnostic_z_index=diagnostic_z_index,
         )
 
     if ncrcat_years_flag:
