@@ -574,7 +574,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                 )
             if diagnostic_plots and zkey in out:
                 _plot_boundary_diagnostic(
-                    tracer, out[zkey], seg, "zos", year, month, ensemble, output_dir,
+                    tracer, out[zkey], seg, "zos", year, month, ensemble, seg.output_dir,
                     time_index=diagnostic_time_index, z_index=diagnostic_z_index,
                 )
 
@@ -614,12 +614,12 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                 vkey_diag = f"v_{seg.segstr}"
                 if ukey_diag in out_uv:
                     _plot_boundary_diagnostic(
-                        uo_m, out_uv[ukey_diag], seg, "u", year, month, ensemble, output_dir,
+                        uo_m, out_uv[ukey_diag], seg, "u", year, month, ensemble, seg.output_dir,
                         time_index=diagnostic_time_index, z_index=diagnostic_z_index,
                     )
                 if vkey_diag in out_uv:
                     _plot_boundary_diagnostic(
-                        vo_m, out_uv[vkey_diag], seg, "v", year, month, ensemble, output_dir,
+                        vo_m, out_uv[vkey_diag], seg, "v", year, month, ensemble, seg.output_dir,
                         time_index=diagnostic_time_index, z_index=diagnostic_z_index,
                     )
 
@@ -649,12 +649,12 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                 if diagnostic_plots:
                     if ukey in out_uv:
                         _plot_boundary_diagnostic(
-                            uo_m, out_uv[ukey], seg, "u", year, month, ensemble, output_dir,
+                            uo_m, out_uv[ukey], seg, "u", year, month, ensemble, seg.output_dir,
                             time_index=diagnostic_time_index, z_index=diagnostic_z_index,
                         )
                     if vkey in out_uv:
                         _plot_boundary_diagnostic(
-                            vo_m, out_uv[vkey], seg, "v", year, month, ensemble, output_dir,
+                            vo_m, out_uv[vkey], seg, "v", year, month, ensemble, seg.output_dir,
                             time_index=diagnostic_time_index, z_index=diagnostic_z_index,
                         )
 
@@ -694,7 +694,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
                     )
                 if diagnostic_plots and tkey in out:
                     _plot_boundary_diagnostic(
-                        tracer, out[tkey], seg, var, year, month, ensemble, output_dir,
+                        tracer, out[tkey], seg, var, year, month, ensemble, seg.output_dir,
                         time_index=diagnostic_time_index, z_index=diagnostic_z_index,
                     )
         elif var in ds:
