@@ -53,6 +53,7 @@ D) Regridding / interpolation settings
 - Velocity OBC: `seg.regrid_velocity(... flood=False, rotate=False)`.
 - Regridding weights are cached in shared `regrid_*` directories and reused.
 - If a regridded field is detected all-zero, the corresponding weight file is removed and regenerated once.
+- PHY OBC generation can write boundary-profile diagnostic PNGs comparing nearest NEP source samples against the GOA regridded OBC values for each configured segment/variable.
 
 E) Reproducible command used to run all stages
 From `tools/IC-OBC-FCST-clean`:
@@ -246,6 +247,8 @@ PHY OBC details:
 - velocity fields use seg.regrid_velocity(..., flood=False, rotate=False)
 - weight files are saved/reused in configured regrid_dir
 - if all-zero output is detected for a segment/field, corresponding weights are removed and re-built once
+- diagnostic_plots=true writes PNG profiles under OBC/PHY/eNN/diagnostics/boundary_profiles/ when matplotlib is available
+- PHY tasks treat enabled diagnostic PNGs as expected outputs, so an existing completed case is rerun if the NetCDF files exist but the diagnostics are missing
 
 BGC OBC details:
 - tracer-only segment regridding via seg.regrid_tracer(...)
