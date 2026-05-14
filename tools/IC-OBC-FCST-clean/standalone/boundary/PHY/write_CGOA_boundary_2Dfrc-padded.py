@@ -142,6 +142,20 @@ def _select_time_z_slice(da: xr.DataArray, time_index=0, z_index=0) -> xr.DataAr
     return out.squeeze(drop=True)
 
 
+def _align_longitude_convention(source_lon, target_lon):
+    """Return source longitudes shifted to the target longitude convention."""
+    src = np.asarray(source_lon, dtype="float64").copy()
+    tgt = np.asarray(target_lon, dtype="float64")
+    src_med = np.nanmedian(src)
+    tgt_med = np.nanmedian(tgt)
+    if np.isfinite(src_med) and np.isfinite(tgt_med):
+        if tgt_med < 0.0 and src_med > 180.0:
+            src = np.where(src > 180.0, src - 360.0, src)
+        elif tgt_med > 180.0 and src_med < 0.0:
+            src = np.where(src < 0.0, src + 360.0, src)
+    return src
+
+
 def _nearest_source_profile(source: xr.DataArray, target_lon, target_lat, time_index=0, z_index=0):
     """Sample a source field at nearest source-grid points to a target boundary."""
     src = _select_time_z_slice(source, time_index=time_index, z_index=z_index)
@@ -149,12 +163,17 @@ def _nearest_source_profile(source: xr.DataArray, target_lon, target_lat, time_i
         raise ValueError(f"{source.name}: diagnostic source field has no lon/lat coordinates")
 
     src_vals = np.asarray(src.values, dtype="float64")
-    lon = np.asarray(src["lon"].values, dtype="float64")
-    lat = np.asarray(src["lat"].values, dtype="float64")
     tgt_lon = np.asarray(target_lon, dtype="float64").ravel()
     tgt_lat = np.asarray(target_lat, dtype="float64").ravel()
+    lon = _align_longitude_convention(src["lon"].values, tgt_lon)
+    lat = np.asarray(src["lat"].values, dtype="float64")
 
-    valid = np.isfinite(src_vals) & np.isfinite(lon) & np.isfinite(lat)
+    finite = np.isfinite(src_vals) & np.isfinite(lon) & np.isfinite(lat)
+    # MOM restart/history fields often carry exact zeros over land rather than NaNs.
+    # Prefer nonzero finite samples so the diagnostic line follows nearby wet NEP data.
+    valid = finite & (np.abs(src_vals) > 1.0e-14)
+    if not valid.any():
+        valid = finite
     if not valid.any():
         return np.full_like(tgt_lon, np.nan, dtype="float64"), np.full_like(tgt_lon, np.nan, dtype="float64")
 
@@ -226,7 +245,7 @@ def _plot_boundary_diagnostic(
     x = np.arange(n)
 
     fig, axes = plt.subplots(2, 1, figsize=(12, 7), sharex=True, constrained_layout=True)
-    axes[0].plot(x, nep_profile[:n], label="NEP nearest source", linewidth=1.4)
+    axes[0].plot(x, nep_profile[:n], label="NEP nearest nonzero source", linewidth=1.4)
     axes[0].plot(x, goa_profile[:n], label="GOA regridded OBC", linewidth=1.1, alpha=0.85)
     axes[0].set_ylabel(var_name)
     axes[0].set_title(
