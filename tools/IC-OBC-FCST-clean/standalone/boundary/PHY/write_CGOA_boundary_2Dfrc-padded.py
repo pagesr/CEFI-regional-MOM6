@@ -664,11 +664,12 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
 
         if var in tracer_sources:
             tracer_time = tracer_time_index
+            tracer_time_days = ((tracer_time - ref) / np.timedelta64(1, "D")).to_numpy(dtype="float64")
             tracer_vals = tracer_sources[var]
             tracer = xr.DataArray(
                 tracer_vals,
                 dims=("time", "z", "yh", "xh"),
-                coords={"time": tracer_time, "z": np.arange(nz), "yh": np.arange(ny), "xh": np.arange(nx)},
+                coords={"time": tracer_time_days, "z": np.arange(nz), "yh": np.arange(ny), "xh": np.arange(nx)},
                 name=var,
             )
             _progress(

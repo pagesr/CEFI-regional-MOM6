@@ -248,6 +248,7 @@ PHY OBC details:
 - weight files are saved/reused in configured regrid_dir
 - if all-zero output is detected for a segment/field, corresponding weights are removed and re-built once
 - diagnostic_plots=true writes PNG profiles under OBC/PHY/eNN/diagnostics/boundary_profiles/ when matplotlib is available
+- PHY tasks treat enabled diagnostic PNGs as expected outputs, so an existing completed case is rerun if the NetCDF files exist but the diagnostics are missing
 
 BGC OBC details:
 - tracer-only segment regridding via seg.regrid_tracer(...)

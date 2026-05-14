@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import sys
 from pathlib import Path
 
@@ -28,6 +29,39 @@ def _expected_phy_outputs(cfg: dict, year: str) -> list[Path]:
     return [output_dir / f"{var}_{seg_id:03d}_{year}.nc" for var in variables for seg_id in segment_ids]
 
 
+def _matplotlib_available() -> bool:
+    """Return whether diagnostic plotting can render PNGs in this environment."""
+    return importlib.util.find_spec("matplotlib") is not None
+
+
+def _expected_phy_diagnostic_outputs(cfg: dict, year: str) -> list[Path]:
+    """Return expected boundary-profile PNGs when PHY diagnostics are enabled."""
+    if not bool(cfg.get("diagnostic_plots", False)):
+        return []
+    if not _matplotlib_available():
+        print("[OBC-PHY] diagnostic_plots=true but matplotlib is unavailable; PNGs are not expected")
+        return []
+
+    output_dir = Path(cfg["output_dir"])
+    diag_dir = output_dir / "diagnostics" / "boundary_profiles"
+    variables = cfg.get("variables", [])
+    segment_ids = [int(seg["id"]) for seg in cfg.get("segments", [])]
+    diag_vars: list[str] = []
+    for var in variables:
+        if var == "uv":
+            diag_vars.extend(["u", "v"])
+        else:
+            diag_vars.append(var)
+
+    month = str(cfg.get("month", "01")).zfill(2)
+    ensemble = str(cfg.get("ensemble", "01")).zfill(2)
+    return [
+        diag_dir / f"{var}_{seg_id:03d}_{year}{month}_e{ensemble}_profile.png"
+        for var in diag_vars
+        for seg_id in segment_ids
+    ]
+
+
 def run_phy_obc(config: Path, year: str, month: str, ensemble: str, output_root: Path, force: bool = False) -> None:
     config = config.resolve()
     output_root = output_root.resolve()
@@ -50,8 +84,12 @@ def run_phy_obc(config: Path, year: str, month: str, ensemble: str, output_root:
 
     marker = expected_marker_file(f"phy_obc_e{ensemble}", out_dir)
     expected_files = _expected_phy_outputs(cfg, year)
-    missing_files = [f for f in expected_files if not f.exists()]
-    print(f"[OBC-PHY] expected_files={len(expected_files)} missing_files={len(missing_files)}")
+    expected_diag_files = _expected_phy_diagnostic_outputs(cfg, year)
+    missing_files = [f for f in [*expected_files, *expected_diag_files] if not f.exists()]
+    print(
+        f"[OBC-PHY] expected_files={len(expected_files)} "
+        f"expected_diag_files={len(expected_diag_files)} missing_files={len(missing_files)}"
+    )
     if missing_files:
         preview = ", ".join(str(p.name) for p in missing_files[:4])
         suffix = " ..." if len(missing_files) > 4 else ""
