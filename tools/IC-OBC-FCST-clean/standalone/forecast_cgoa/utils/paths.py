@@ -14,9 +14,8 @@ BGC_OBC_DIR = STANDALONE_ROOT / "boundary" / "BGC"
 IC_PHY_SCRIPT = INITIAL_DIR / "nep_to_goa_phy_ic.py"
 IC_BGC_SCRIPT = INITIAL_DIR / "nep_to_goa_bgc_ic.py"
 PHY_OBC_SCRIPT = PHY_OBC_DIR / "write_CGOA_boundary_2Dfrc-padded.py"
-REPO_ROOT = WORKFLOW_ROOT.parents[1]
-PHY_OBC_TRACER_SCRIPT = REPO_ROOT / "tools" / "forecast_multi_proc" / "standalone" / "boundary" / "PHY" / "write_CGOA_boundary_2Dfrc-padded.py"
-PHY_OBC_TRACER_DIR = PHY_OBC_TRACER_SCRIPT.parent
+PHY_OBC_TRACER_SCRIPT = PHY_OBC_SCRIPT
+PHY_OBC_TRACER_DIR = PHY_OBC_DIR
 BGC_OBC_SCRIPT = BGC_OBC_DIR / "OBC_BGC.py"
 BGC_OBC_POSTPROCESS_SCRIPT = FORECAST_CGOA_DIR / "postprocess_bgc_obc_nco.sh"
 
