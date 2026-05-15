@@ -342,6 +342,75 @@ def _safe_rename_vars(ds: xr.Dataset, rename_map: dict[str, str]) -> xr.Dataset:
     return ds.rename_vars(existing)
 
 
+
+def _is_index_like(values: np.ndarray, atol: float = 1.0e-6) -> bool:
+    """Return True when values are just 0, 1, 2, ... or 1, 2, 3, ... indices."""
+    vals = np.asarray(values, dtype="float64").ravel()
+    if vals.size == 0 or not np.all(np.isfinite(vals)):
+        return False
+    zero_based = np.arange(vals.size, dtype="float64")
+    one_based = np.arange(1, vals.size + 1, dtype="float64")
+    return (
+        np.allclose(vals, zero_based, atol=atol, rtol=0.0)
+        or np.allclose(vals, one_based, atol=atol, rtol=0.0)
+    )
+
+
+def _valid_vertical_centers(values, nz: int) -> np.ndarray | None:
+    """Return usable positive-down physical vertical centers, rejecting indices."""
+    vals = np.asarray(values, dtype="float64").ravel()
+    if vals.size != nz or not np.all(np.isfinite(vals)):
+        return None
+    if np.nanmedian(vals) < 0.0:
+        vals = np.abs(vals)
+    if _is_index_like(vals):
+        return None
+    if not np.all(np.diff(vals) > 0.0):
+        return None
+    return vals
+
+
+def _vertical_center_values(ds: xr.Dataset, var_name: str, nz: int) -> np.ndarray:
+    """Extract physical vertical center depths for a source variable.
+
+    The OBC writer uses z_to_dz(), which computes layer thickness from the
+    destination 'z' coordinate.  Therefore 'z' must contain real depth centers,
+    not level indices.  Prefer coordinates attached to the source variable, then
+    common dataset-level vertical coordinates.  Raise if only index-like values
+    are available, because silently using 0..N creates 1 m layers and one huge
+    bottom layer.
+    """
+    var = ds[var_name]
+    candidates = []
+
+    # Coordinates attached to the variable/dimensions are the most reliable.
+    for dim in var.dims:
+        if var.sizes.get(dim) == nz:
+            if dim in var.coords:
+                candidates.append((f"{var_name}.{dim}", var.coords[dim].values))
+            if dim in ds.coords:
+                candidates.append((dim, ds.coords[dim].values))
+            if dim in ds.variables:
+                candidates.append((dim, ds[dim].values))
+
+    # Common MOM/FMS vertical coordinate names seen in restart/history files.
+    for name in ("z", "zl", "z_l", "Layer", "layer", "lev", "depth", "st_ocean"):
+        if name in ds.variables:
+            candidates.append((name, ds[name].values))
+
+    for name, values in candidates:
+        centers = _valid_vertical_centers(values, nz)
+        if centers is not None:
+            _progress("GRID", f"Using vertical centers from {name}: first={centers[0]:g} last={centers[-1]:g} nz={nz}")
+            return centers
+
+    checked = ", ".join(name for name, _ in candidates) or "none"
+    raise ValueError(
+        f"Could not find physical vertical center depths for {var_name} (nz={nz}). "
+        f"Checked: {checked}. Refusing to use 0..{nz - 1} index values because that "
+        "would create invalid dz_* OBC variables."
+    )
+
 def _progress(tag, message):
     print(f"[PHY-OBC][{tag}] {message}", flush=True)
 
@@ -478,6 +547,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
     print(f"[PHY-OBC] Loaded restart: {path.join(rst_dir, f'restdate_{year}{month}01/MOM_{year}{month}01.res.nc')}")
 
     ds_z_hind = _safe_rename_vars(ds_z_hind, {'Salt': 'so', 'Temp': 'thetao', 'u': 'uo', 'v': 'vo'})
+    z_centers = _vertical_center_values(ds_z_hind, "thetao", nz)
 
     src_time = [pd.Timestamp(int(year), int(month), 1)]
     so_src = np.zeros((12, nz, ny, nx), dtype=np.float32)
@@ -603,12 +673,12 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
         uo_monthly = xr.DataArray(
             uo_src,
             dims=("time", "z", "yh", "xq"),
-            coords={"time": uv_monthly_time, "z": np.arange(nz), "yh": np.arange(ny), "xq": np.arange(nxq)},
+            coords={"time": uv_monthly_time, "z": z_centers, "yh": np.arange(ny), "xq": np.arange(nxq)},
         )
         vo_monthly = xr.DataArray(
             vo_src,
             dims=("time", "z", "yq", "xh"),
-            coords={"time": uv_monthly_time, "z": np.arange(nz), "yq": np.arange(nyq), "xh": np.arange(nx)},
+            coords={"time": uv_monthly_time, "z": z_centers, "yq": np.arange(nyq), "xh": np.arange(nx)},
         )
         for seg in segments:
             _progress("REGRID", f"segment={seg.border} var=uv")
@@ -688,7 +758,7 @@ def write_year(year, glorys_dir, nep_static, segments, variables, month, ensembl
             tracer = xr.DataArray(
                 tracer_vals,
                 dims=("time", "z", "yh", "xh"),
-                coords={"time": tracer_time_days, "z": np.arange(nz), "yh": np.arange(ny), "xh": np.arange(nx)},
+                coords={"time": tracer_time_days, "z": z_centers, "yh": np.arange(ny), "xh": np.arange(nx)},
                 name=var,
             )
             _progress(
