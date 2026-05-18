@@ -343,7 +343,7 @@ E) Regridding weights (shared folders inside tools/forecast_multi_proc)
 
 From repository root:
 
-python tools/forecast_multi_proc/submit_workflow.py \
+python tools/IC-OBC-FCST_updated/submit_workflow.py \
   --years 2015 \
   --months 10 \
   --ensembles 01 02 03 04 05 \
@@ -366,7 +366,7 @@ Options:
 
 8.2) Build tasks/configs only
 
-python tools/forecast_multi_proc/build_task_lists.py \
+python tools/IC-OBC-FCST_updated/build_task_lists.py \
   --years 2015 --months 10 --ensembles 01 02 03 \
   --output-root /path/to/outputs \
   --config-root /path/to/generated_configs \
@@ -380,21 +380,21 @@ This creates/updates:
 8.3) Run one task manually from TSV
 
 IC example:
-python tools/forecast_multi_proc/run_task_from_tsv.py \
+python tools/IC-OBC-FCST_updated/run_task_from_tsv.py \
   --stage ic \
   --task-file tools/forecast_multi_proc/tasks/ic_tasks.tsv \
   --task-id 0 \
   --output-root /path/to/outputs
 
 PHY example:
-python tools/forecast_multi_proc/run_task_from_tsv.py \
+python tools/IC-OBC-FCST_updated/run_task_from_tsv.py \
   --stage phy \
   --task-file tools/forecast_multi_proc/tasks/phy_tasks.tsv \
   --task-id 0 \
   --output-root /path/to/outputs
 
 BGC example:
-python tools/forecast_multi_proc/run_task_from_tsv.py \
+python tools/IC-OBC-FCST_updated/run_task_from_tsv.py \
   --stage bgc \
   --task-file tools/forecast_multi_proc/tasks/bgc_tasks.tsv \
   --task-id 0 \
@@ -405,18 +405,18 @@ python tools/forecast_multi_proc/run_task_from_tsv.py \
 
 IC wrapper:
 python tools/forecast_multi_proc/standalone/forecast_cgoa/run_ic.py \
-  --ic-phy-config tools/forecast_multi_proc/generated_configs/YYYY/MM/eNN/ic_phy.yaml \
-  --ic-bgc-config tools/forecast_multi_proc/generated_configs/YYYY/MM/eNN/ic_bgc.yaml \
+  --ic-phy-config tools/IC-OBC-FCST_updated/generated_configs/YYYY/MM/eNN/ic_phy.yaml \
+  --ic-bgc-config tools/IC-OBC-FCST_updated/generated_configs/YYYY/MM/eNN/ic_bgc.yaml \
   --year YYYY --month MM --output-root /path/to/outputs
 
 PHY wrapper:
 python tools/forecast_multi_proc/standalone/forecast_cgoa/run_phy_obc.py \
-  --config tools/forecast_multi_proc/generated_configs/YYYY/MM/eNN/obc_phy.yaml \
+  --config tools/IC-OBC-FCST_updated/generated_configs/YYYY/MM/eNN/obc_phy.yaml \
   --year YYYY --month MM --ensemble NN --output-root /path/to/outputs
 
 BGC wrapper:
 python tools/forecast_multi_proc/standalone/forecast_cgoa/run_bgc_obc.py \
-  --config tools/forecast_multi_proc/generated_configs/YYYY/MM/eNN/obc_bgc.yaml \
+  --config tools/IC-OBC-FCST_updated/generated_configs/YYYY/MM/eNN/obc_bgc.yaml \
   --year YYYY --month MM --ensemble NN --output-root /path/to/outputs
 
 

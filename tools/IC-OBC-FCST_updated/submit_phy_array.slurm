@@ -49,7 +49,7 @@ if [[ -z "$PYTHON_BIN" ]]; then
   fi
 fi
 
-"$PYTHON_BIN" tools/IC-OBC-FCST-clean/run_task_from_tsv.py \
+"$PYTHON_BIN" tools/IC-OBC-FCST_updated/run_task_from_tsv.py \
   --stage phy \
   --task-file "$TASK_FILE" \
   --task-id "$SLURM_ARRAY_TASK_ID" \

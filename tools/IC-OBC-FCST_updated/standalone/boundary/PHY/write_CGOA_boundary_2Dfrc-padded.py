@@ -230,12 +230,44 @@ def _finalize_segment_002_file(ncfile) -> bool:
     return True
 
 
-def _finalize_segment_002_outputs(output_dir, filenames) -> None:
+def _finalize_segment_002_outputs(output_dir, filenames, label: str = "segment-002 finalizer") -> None:
     """Apply the last segment-002 orientation/fill pass to named final files."""
     for fname in filenames:
         ncfile = Path(output_dir) / fname
-        if _finalize_segment_002_file(ncfile):
+        changed = _finalize_segment_002_file(ncfile)
+        if changed:
             print(f"[PHY-OBC] finalized segment-002 file: {ncfile}")
+        _report_segment_002_file(ncfile, label)
+
+
+def _report_segment_002_file(ncfile, label: str) -> None:
+    """Print first/last coordinates and zos NaN count for an actual final file."""
+    ncfile = Path(ncfile)
+    if "_002" not in ncfile.name or not ncfile.exists():
+        return
+
+    with xr.open_dataset(ncfile, decode_times=False) as ds:
+        lon = "lon_segment_002"
+        lat = "lat_segment_002"
+        zos = "zos_segment_002"
+        if lon not in ds.variables or lat not in ds.variables:
+            print(f"[PHY-OBC] {label}: {ncfile} missing lon/lat summary variables")
+            return
+
+        lon_vals = np.asarray(ds[lon].values, dtype="float64")
+        lat_vals = np.asarray(ds[lat].values, dtype="float64")
+        nan_count = "NA"
+        if zos in ds.variables:
+            zos_vals = np.asarray(ds[zos].values)
+            nan_count = str(int((~np.isfinite(zos_vals)).sum()))
+
+        order = "north->south" if lat_vals.size >= 2 and lat_vals[0] > lat_vals[-1] else "south->north"
+        print(
+            f"[PHY-OBC] {label}: file={ncfile} order={order} "
+            f"first_lon={lon_vals[0]:.3f} first_lat={lat_vals[0]:.3f} "
+            f"last_lon={lon_vals[-1]:.3f} last_lat={lat_vals[-1]:.3f} "
+            f"zos_nan_count={nan_count}"
+        )
 
 def _select_time_z_slice(da: xr.DataArray, time_index=0, z_index=0) -> xr.DataArray:
     """Return a 2D horizontal or 1D boundary slice for diagnostics."""
@@ -1027,6 +1059,7 @@ def main(config_file):
         _finalize_segment_002_outputs(
             output_dir,
             [f"{var}_002_{y}.nc" for var in variables],
+            label=f"post-write yearly segment-002 finalizer year={y}",
         )
 
     if ncrcat_years_flag:
@@ -1038,6 +1071,7 @@ def main(config_file):
         _finalize_segment_002_outputs(
             output_dir,
             [f"{var_name}_002.nc" for var_name in ncrcat_names],
+            label="post-ncrcat segment-002 finalizer",
         )
         print("[PHY-OBC] Completed ncrcat yearly concatenation")
 

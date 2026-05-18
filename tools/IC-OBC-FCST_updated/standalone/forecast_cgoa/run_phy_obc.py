@@ -124,11 +124,42 @@ def _finalize_segment_002_file(ncfile: Path) -> bool:
     return True
 
 
-def _finalize_segment_002_outputs(files: list[Path]) -> None:
+def _finalize_segment_002_outputs(files: list[Path], label: str = "segment-002 finalizer") -> None:
     """Apply final in-place segment-002 fixes after all PHY writers finish."""
     for ncfile in files:
-        if _finalize_segment_002_file(ncfile):
+        changed = _finalize_segment_002_file(ncfile)
+        if changed:
             print(f"[OBC-PHY] finalized segment-002 file: {ncfile}")
+        _report_segment_002_file(ncfile, label)
+
+
+def _report_segment_002_file(ncfile: Path, label: str) -> None:
+    """Print first/last coordinates and zos NaN count for an actual final file."""
+    if "_002" not in ncfile.name or not ncfile.exists():
+        return
+
+    with xr.open_dataset(ncfile, decode_times=False) as ds:
+        lon = "lon_segment_002"
+        lat = "lat_segment_002"
+        zos = "zos_segment_002"
+        if lon not in ds.variables or lat not in ds.variables:
+            print(f"[OBC-PHY] {label}: {ncfile} missing lon/lat summary variables")
+            return
+
+        lon_vals = np.asarray(ds[lon].values, dtype="float64")
+        lat_vals = np.asarray(ds[lat].values, dtype="float64")
+        nan_count = "NA"
+        if zos in ds.variables:
+            zos_vals = np.asarray(ds[zos].values)
+            nan_count = str(int((~np.isfinite(zos_vals)).sum()))
+
+        order = "north->south" if lat_vals.size >= 2 and lat_vals[0] > lat_vals[-1] else "south->north"
+        print(
+            f"[OBC-PHY] {label}: file={ncfile} order={order} "
+            f"first_lon={lon_vals[0]:.3f} first_lat={lat_vals[0]:.3f} "
+            f"last_lon={lon_vals[-1]:.3f} last_lat={lat_vals[-1]:.3f} "
+            f"zos_nan_count={nan_count}"
+        )
 
 def _segment_002_output_is_valid(ncfile: Path) -> tuple[bool, str]:
     """Return whether an existing segment-002 output matches MOM6 J=N:0 order."""
@@ -240,6 +271,10 @@ def run_phy_obc(config: Path, year: str, month: str, ensemble: str, output_root:
     cfg["last_year"] = int(cfg["last_year"])
     cfg["month"] = str(cfg.get("month", month)).zfill(2)
     cfg["ensemble"] = str(cfg.get("ensemble", ensemble)).zfill(2)
+    # The task TSVs may point at stale configs copied from another workflow tree.
+    # Force the scientific writer and all final checks to operate on the actual
+    # output-root case directory passed to this updated workflow invocation.
+    cfg["output_dir"] = str(out_dir)
     with config.open("w", encoding="utf-8") as stream:
         yaml.safe_dump(cfg, stream, sort_keys=False)
 
@@ -250,7 +285,7 @@ def run_phy_obc(config: Path, year: str, month: str, ensemble: str, output_root:
     invalid_files = _invalid_segment_002_outputs([f for f in expected_files if f.exists()])
     if marker.exists() and invalid_files:
         print("[OBC-PHY] attempting in-place finalization of existing segment-002 outputs before rerun")
-        _finalize_segment_002_outputs([f for f in expected_files if f.exists()])
+        _finalize_segment_002_outputs([f for f in expected_files if f.exists()], label="pre-skip segment-002 finalizer")
         invalid_files = _invalid_segment_002_outputs([f for f in expected_files if f.exists()])
 
     print(
@@ -316,7 +351,7 @@ def run_phy_obc(config: Path, year: str, month: str, ensemble: str, output_root:
             log_file=DEFAULT_LOG_ROOT / f"{year}_{month}_e{ensemble}_phy_obc_uvzos.log",
         )
 
-    _finalize_segment_002_outputs([f for f in expected_files if f.exists()])
+    _finalize_segment_002_outputs([f for f in expected_files if f.exists()], label="post-run segment-002 finalizer")
     invalid_files = _invalid_segment_002_outputs([f for f in expected_files if f.exists()])
     if invalid_files:
         details = "; ".join(f"{p.name}: {reason}" for p, reason in invalid_files)
