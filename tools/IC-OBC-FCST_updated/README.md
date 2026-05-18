@@ -20,6 +20,7 @@ Segment 002 ordering update:
 - `time`, `nz_segment_002`, and `constituent` axes are not reversed.
 - Velocity signs are not changed.
 - `lon_segment_002` and `lat_segment_002` are reversed with the data variables.
+- `zos_segment_002` NaN/Inf gaps are filled from the nearest valid SSH value along `ny_segment_002` before writing.
 - `ny_segment_002` and `nz_segment_002` coordinates are reset to clean `0, 1, 2, ...` indices after the horizontal reversal.
 - This applies to physical and tidal files generated through the `Segment.to_netcdf()` workflow, including `uv_002`, `zos_002`, `thetao_002`, `so_002`, `tu_002`, and `tz_002`.
 

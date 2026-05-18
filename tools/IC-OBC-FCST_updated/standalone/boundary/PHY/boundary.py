@@ -385,6 +385,46 @@ class Segment():
         elif self.border in ['west', 'east']:
             return len(self.coords['lat'])
     
+    def _fill_nan_along_dim(self, da, dim):
+        """Fill NaN/Inf values from the nearest valid point along one dimension."""
+        if dim not in da.dims:
+            return da
+
+        values = np.asarray(da.values).copy()
+        if not np.issubdtype(values.dtype, np.number) or values.size == 0:
+            return da
+
+        axis = da.get_axis_num(dim)
+        moved = np.moveaxis(values, axis, -1)
+        flat = moved.reshape(-1, moved.shape[-1])
+        x = np.arange(flat.shape[-1])
+
+        for row in flat:
+            missing = ~np.isfinite(row)
+            if not missing.any():
+                continue
+
+            valid = ~missing
+            if not valid.any():
+                continue
+
+            valid_x = x[valid]
+            missing_x = x[missing]
+            nearest = np.abs(valid_x[:, None] - missing_x[None, :]).argmin(axis=0)
+            row[missing] = row[valid_x[nearest]]
+
+        filled = np.moveaxis(flat.reshape(moved.shape), -1, axis)
+        return xarray.DataArray(filled, dims=da.dims, coords=da.coords, attrs=da.attrs, name=da.name)
+
+    def _fill_segment_002_zos_nans(self, ds):
+        """Fill segment-002 SSH gaps along the boundary before writing."""
+        seg_dim = 'ny_segment_002'
+        zos_name = 'zos_segment_002'
+        if seg_dim in ds.dims and zos_name in ds.data_vars:
+            ds = ds.copy()
+            ds[zos_name] = self._fill_nan_along_dim(ds[zos_name], seg_dim)
+        return ds
+
     def _mom6_order_segment_002(self, ds):
         """Return segment 002 data in MOM6 J=N:0 order.
 
@@ -395,17 +435,14 @@ class Segment():
         and constituent axes are intentionally left unchanged and velocity
         signs are not modified.
         """
-        if self.num != 2:
-            return ds
-
-        seg_dim = f'ny_{self.segstr}'
+        seg_dim = 'ny_segment_002'
         if seg_dim not in ds.dims:
             return ds
 
         ds = ds.isel({seg_dim: slice(None, None, -1)})
         ds = ds.assign_coords({seg_dim: np.arange(ds.sizes[seg_dim], dtype=np.int32)})
 
-        z_dim = f'nz_{self.segstr}'
+        z_dim = 'nz_segment_002'
         if z_dim in ds.dims:
             ds = ds.assign_coords({z_dim: np.arange(ds.sizes[z_dim], dtype=np.int32)})
 
@@ -420,6 +457,7 @@ class Segment():
             suffix (str, optional): Optional suffix to append to the filename (before .nc). Defaults to None.
             additional_encoding (dict, optional): Extra encodings to apply (kept for backward compat).
         """
+        ds = self._fill_segment_002_zos_nans(ds)
         ds = self._mom6_order_segment_002(ds)
 
         # ------------------------------------------------------------------
