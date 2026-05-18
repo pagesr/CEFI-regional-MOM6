@@ -24,6 +24,112 @@ from utils.paths import (
 
 
 
+
+def _fill_nearest_along_dim(da: xr.DataArray, dim: str) -> xr.DataArray:
+    """Fill NaN/Inf values with the nearest valid value along one dimension."""
+    if dim not in da.dims:
+        return da
+
+    values = np.asarray(da.values).copy()
+    if not np.issubdtype(values.dtype, np.number) or values.size == 0:
+        return da
+
+    axis = da.get_axis_num(dim)
+    moved = np.moveaxis(values, axis, -1)
+    flat = moved.reshape(-1, moved.shape[-1])
+    x = np.arange(flat.shape[-1])
+
+    for row in flat:
+        missing = ~np.isfinite(row)
+        if not missing.any():
+            continue
+        valid = ~missing
+        if not valid.any():
+            continue
+        valid_x = x[valid]
+        missing_x = x[missing]
+        nearest = np.abs(valid_x[:, None] - missing_x[None, :]).argmin(axis=0)
+        row[missing] = row[valid_x[nearest]]
+
+    filled = np.moveaxis(flat.reshape(moved.shape), -1, axis)
+    return xr.DataArray(filled, dims=da.dims, coords=da.coords, attrs=da.attrs, name=da.name)
+
+
+def _finalize_segment_002_file(ncfile: Path) -> bool:
+    """Fix a final segment-002 PHY OBC file in place if ordering or SSH gaps remain."""
+    if "_002" not in ncfile.name or not ncfile.exists():
+        return False
+
+    ny = "ny_segment_002"
+    lat = "lat_segment_002"
+    zos = "zos_segment_002"
+
+    with xr.open_dataset(ncfile, decode_times=False) as opened:
+        if ny not in opened.dims:
+            return False
+        ds = opened.load()
+
+    changed = False
+
+    if zos in ds.data_vars:
+        before_bad = int((~np.isfinite(np.asarray(ds[zos].values))).sum())
+        if before_bad:
+            ds[zos] = _fill_nearest_along_dim(ds[zos], ny)
+            after_bad = int((~np.isfinite(np.asarray(ds[zos].values))).sum())
+            if after_bad:
+                raise ValueError(f"{ncfile}: {zos} still has {after_bad} NaN/Inf values after nearest-neighbor fill")
+            changed = True
+
+    if lat in ds.variables:
+        lat_vals = np.asarray(ds[lat].values, dtype="float64")
+        if lat_vals.size >= 2 and lat_vals[0] < lat_vals[-1]:
+            ds = ds.isel({ny: slice(None, None, -1)})
+            changed = True
+
+    expected_ny = np.arange(ds.sizes[ny], dtype=np.int32)
+    if ny not in ds.coords or not np.array_equal(np.asarray(ds[ny].values), expected_ny):
+        ds = ds.assign_coords({ny: expected_ny})
+        changed = True
+
+    nz = "nz_segment_002"
+    if nz in ds.dims:
+        expected_nz = np.arange(ds.sizes[nz], dtype=np.int32)
+        if nz not in ds.coords or not np.array_equal(np.asarray(ds[nz].values), expected_nz):
+            ds = ds.assign_coords({nz: expected_nz})
+            changed = True
+
+    if not changed:
+        ds.close()
+        return False
+
+    for name in ds.data_vars:
+        ds[name].encoding["_FillValue"] = 1.0e20
+    if "time" in ds.variables:
+        ds["time"].encoding["dtype"] = "float64"
+        if "calendar" not in ds["time"].attrs and "modulo" not in ds["time"].attrs:
+            ds["time"].encoding["calendar"] = "gregorian"
+    for coord_name in ("lon_segment_002", "lat_segment_002"):
+        if coord_name in ds.variables:
+            ds[coord_name].encoding["dtype"] = "float64"
+
+    tmpfile = ncfile.with_suffix(".tmp.nc")
+    ds.to_netcdf(
+        tmpfile,
+        format="NETCDF3_64BIT",
+        engine="netcdf4",
+        unlimited_dims="time" if "time" in ds.dims else None,
+    )
+    ds.close()
+    tmpfile.replace(ncfile)
+    return True
+
+
+def _finalize_segment_002_outputs(files: list[Path]) -> None:
+    """Apply final in-place segment-002 fixes after all PHY writers finish."""
+    for ncfile in files:
+        if _finalize_segment_002_file(ncfile):
+            print(f"[OBC-PHY] finalized segment-002 file: {ncfile}")
+
 def _segment_002_output_is_valid(ncfile: Path) -> tuple[bool, str]:
     """Return whether an existing segment-002 output matches MOM6 J=N:0 order."""
     if "_002" not in ncfile.name:
@@ -142,6 +248,11 @@ def run_phy_obc(config: Path, year: str, month: str, ensemble: str, output_root:
     expected_diag_files = _expected_phy_diagnostic_outputs(cfg, year)
     missing_files = [f for f in [*expected_files, *expected_diag_files] if not f.exists()]
     invalid_files = _invalid_segment_002_outputs([f for f in expected_files if f.exists()])
+    if marker.exists() and invalid_files:
+        print("[OBC-PHY] attempting in-place finalization of existing segment-002 outputs before rerun")
+        _finalize_segment_002_outputs([f for f in expected_files if f.exists()])
+        invalid_files = _invalid_segment_002_outputs([f for f in expected_files if f.exists()])
+
     print(
         f"[OBC-PHY] expected_files={len(expected_files)} "
         f"expected_diag_files={len(expected_diag_files)} missing_files={len(missing_files)} "
@@ -204,6 +315,12 @@ def run_phy_obc(config: Path, year: str, month: str, ensemble: str, output_root:
             cwd=PHY_OBC_DIR,
             log_file=DEFAULT_LOG_ROOT / f"{year}_{month}_e{ensemble}_phy_obc_uvzos.log",
         )
+
+    _finalize_segment_002_outputs([f for f in expected_files if f.exists()])
+    invalid_files = _invalid_segment_002_outputs([f for f in expected_files if f.exists()])
+    if invalid_files:
+        details = "; ".join(f"{p.name}: {reason}" for p, reason in invalid_files)
+        raise RuntimeError(f"segment-002 PHY outputs remain invalid after finalization: {details}")
 
     print(f"[OBC-PHY] finished script run for {year}-{month} e{ensemble}")
     write_marker(f"phy_obc_e{ensemble}", out_dir)
