@@ -82,6 +82,78 @@ def fill_missing(arr, xdim='locations', zdim='z', fill='b'):
     return filled
 
 
+def _data_empty_after_regrid(da):
+    """Return True when a regridded field contains no useful nonzero values."""
+    arr = np.asarray(da.values)
+    if arr.size == 0:
+        return True
+    finite = np.isfinite(arr)
+    if not finite.any():
+        return True
+    return np.all(arr[finite] == 0.0)
+
+
+def _nearest_curvilinear_sample_to_segment(tsource, target_coords, name):
+    """Sample a curvilinear source field at nearest source cells to a segment.
+
+    This is a conservative fallback for regional boundary segments where xESMF
+    returns an entirely unmapped/zero locstream result.  It is only used after a
+    failed xESMF result and does not change the default xESMF path.
+    """
+    da = tsource[name] if isinstance(tsource, xarray.Dataset) else tsource
+    if 'lon' not in da.coords or 'lat' not in da.coords:
+        raise ValueError(f"{name}: nearest fallback requires 2D lon/lat coordinates on the source field")
+
+    ydim, xdim = da.dims[-2:]
+    lon = np.asarray(da['lon'].values, dtype='float64')
+    lat = np.asarray(da['lat'].values, dtype='float64')
+    if lon.shape != lat.shape:
+        raise ValueError(f"{name}: source lon/lat shape mismatch: {lon.shape} != {lat.shape}")
+
+    valid = np.isfinite(lon) & np.isfinite(lat)
+
+    # Prefer wet-looking source points so an all-land nearest column does not
+    # create an empty west-boundary fallback.  If a tracer is genuinely zero
+    # everywhere at the first sample, fall back to coordinate-only validity.
+    probe = da
+    for dim in da.dims[:-2]:
+        probe = probe.isel({dim: 0})
+    probe_vals = np.asarray(probe.values)
+    wet = np.isfinite(probe_vals) & (np.abs(probe_vals) > 1.0e-14)
+    if wet.shape == valid.shape and wet.any():
+        valid = valid & wet
+
+    if not valid.any():
+        valid = np.isfinite(lon) & np.isfinite(lat)
+    if not valid.any():
+        raise ValueError(f"{name}: no finite source lon/lat points available for nearest fallback")
+
+    valid_j, valid_i = np.where(valid)
+    lon_flat = lon[valid]
+    lat_flat = lat[valid]
+
+    target_lon = np.asarray(target_coords['lon'].values, dtype='float64').ravel()
+    target_lat = np.asarray(target_coords['lat'].values, dtype='float64').ravel()
+    nearest_j = np.empty(target_lon.size, dtype='int64')
+    nearest_i = np.empty(target_lon.size, dtype='int64')
+
+    for n, (tlon, tlat) in enumerate(zip(target_lon, target_lat)):
+        dist2 = (lon_flat - tlon) ** 2 + (lat_flat - tlat) ** 2
+        k = int(np.nanargmin(dist2))
+        nearest_j[n] = valid_j[k]
+        nearest_i[n] = valid_i[k]
+
+    j_indexer = xarray.DataArray(nearest_j, dims=('locations',))
+    i_indexer = xarray.DataArray(nearest_i, dims=('locations',))
+    sampled = da.isel({ydim: j_indexer, xdim: i_indexer})
+    other_dims = [dim for dim in da.dims if dim not in (ydim, xdim)]
+    sampled = sampled.transpose(*other_dims, 'locations')
+    sampled.name = name
+    sampled.attrs.update(da.attrs)
+    sampled.attrs['regrid_fallback'] = 'nearest_curvilinear_source_to_segment_after_empty_xesmf'
+    return sampled.to_dataset()
+
+
 def flood_missing(arr, **kwargs):
     """Flood missing data (over land) using HCtFlood.
     Had some trouble installing HCtFlood on analysis, so it is
@@ -715,7 +787,8 @@ class Segment():
             method='nearest_s2d', periodic=False, write=True,
             flood=False, fill='b', xdim='lon', ydim='lat', zdim='z',
             regrid_suffix='t', source_var=None,
-            time_attrs=None, time_encoding=None, weight_save=False, **kwargs):
+            time_attrs=None, time_encoding=None, weight_save=False,
+            fallback_nearest_on_empty=True, **kwargs):
         """Regrid a tracer onto segment and (optionally) write to file.
 
         Args:
@@ -731,6 +804,8 @@ class Segment():
             regrid_suffix (str, optional): Suffix to add to xesmf weight file name. Useful when regridding multiple tracers from different datasets.
                 Defaults to 't'.
             source_var (str, optional): If tsource is a dataset, this is the variable to regrid.
+            fallback_nearest_on_empty (bool, optional): If xESMF returns an entirely
+                zero/NaN segment, sample nearest finite source points instead. Defaults to True.
             **kwargs: additional keyword arguments passed to Segment.to_netcdf().
 
         Returns:
@@ -762,6 +837,13 @@ class Segment():
 
         xname = [x for x in tdest.dims][-1]
         tdest = tdest.rename({xname: 'locations'})
+
+        if fallback_nearest_on_empty and name in tdest and _data_empty_after_regrid(tdest[name]):
+            print(
+                f'WARNING: xESMF returned an empty {name} field on {self.segstr}; '
+                'using nearest curvilinear source fallback for this segment.'
+            )
+            tdest = _nearest_curvilinear_sample_to_segment(tsource, self.coords, name)
 
         if 'z' in tsource.coords:
             tdest = fill_missing(tdest, fill=fill)

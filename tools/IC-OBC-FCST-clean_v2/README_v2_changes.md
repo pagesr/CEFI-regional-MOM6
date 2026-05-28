@@ -42,8 +42,14 @@ generation so the GoA target longitudes are expected to print around 201.3 to
   - Converts NEP and GoA T/U/V `lon` arrays to 0-360 before creating PHY IC
     xESMF weights.
   - Prints source and target longitude ranges.
-- `standalone/boundary/BGC/boundary.py` and `standalone/boundary/PHY/boundary.py`
-  - Add optional `fill=None`, `fill=False`, and `fill="none"` diagnostic support.
+- `standalone/boundary/BGC/boundary.py`
+  - Adds optional `fill=None`, `fill=False`, and `fill="none"` diagnostic support.
+    The default production behavior remains `fill='b'`.
+  - Adds a BGC tracer safety fallback: if xESMF returns an entirely zero/NaN
+    segment, sample nearest finite curvilinear NEP source points for that
+    segment instead of writing an empty boundary.
+- `standalone/boundary/PHY/boundary.py`
+  - Adds optional `fill=None`, `fill=False`, and `fill="none"` diagnostic support.
     The default production behavior remains `fill='b'`.
 - `standalone/forecast_cgoa/generate_configs.py`
   - Uses v2-specific shared regrid directories:
