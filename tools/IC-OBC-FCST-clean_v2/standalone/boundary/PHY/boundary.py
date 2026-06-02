@@ -82,6 +82,97 @@ def fill_missing(arr, xdim='locations', zdim='z', fill='b'):
     return filled
 
 
+
+OBC_BAD_VALUE_ABS_THRESHOLD = 1.0e20
+OBC_FILL_SENTINELS = (1.0e20, 9.969209968386869e36, 9.96921e36, 9.969215e36)
+
+
+def _bad_numeric_mask(values, attrs=None, threshold=OBC_BAD_VALUE_ABS_THRESHOLD):
+    """Return a mask for NaN/Inf/fill-like/huge values in an OBC numeric array."""
+    arr = np.asarray(values)
+    mask = ~np.isfinite(arr) | (np.abs(arr) >= threshold)
+    sentinels = list(OBC_FILL_SENTINELS)
+    if attrs:
+        for key in ("_FillValue", "missing_value"):
+            raw = attrs.get(key)
+            if raw is None:
+                continue
+            raw_arr = np.asarray(raw).ravel()
+            for item in raw_arr:
+                try:
+                    sentinels.append(float(item))
+                except (TypeError, ValueError):
+                    pass
+    for sentinel in sentinels:
+        if np.isfinite(sentinel):
+            mask |= np.isclose(arr, sentinel, rtol=0.0, atol=0.0)
+    return mask
+
+
+def _fill_bad_values_nearest_along_axis(values, bad_mask, axis, fallback=0.0):
+    """Fill bad values with nearest valid values along one axis for every profile."""
+    arr = np.asarray(values, dtype="float64").copy()
+    bad = np.asarray(bad_mask, dtype=bool)
+    arr[bad] = np.nan
+
+    arr_move = np.moveaxis(arr, axis, -1)
+    bad_move = np.moveaxis(bad, axis, -1)
+    flat = arr_move.reshape(-1, arr_move.shape[-1])
+    flat_bad = bad_move.reshape(-1, bad_move.shape[-1])
+    x = np.arange(flat.shape[-1])
+
+    for row, row_bad in zip(flat, flat_bad):
+        if not row_bad.any():
+            continue
+        valid = ~row_bad & np.isfinite(row)
+        if not valid.any():
+            row[:] = fallback
+            continue
+        valid_idx = x[valid]
+        valid_vals = row[valid]
+        nearest_pos = np.searchsorted(valid_idx, x)
+        nearest_pos = np.clip(nearest_pos, 0, len(valid_idx) - 1)
+        left_pos = np.maximum(nearest_pos - 1, 0)
+        right_pos = nearest_pos
+        choose_left = np.abs(x - valid_idx[left_pos]) <= np.abs(valid_idx[right_pos] - x)
+        nearest_idx = np.where(choose_left, left_pos, right_pos)
+        row[row_bad] = valid_vals[nearest_idx[row_bad]]
+
+    return np.moveaxis(flat.reshape(arr_move.shape), -1, axis)
+
+
+def _clean_and_validate_zos_obc(ds, segstr, border):
+    """Replace fill-like ZOS values on a segment and fail if any remain."""
+    varname = f"zos_{segstr}"
+    if varname not in ds:
+        return ds
+
+    boundary_dim = f"nx_{segstr}" if border in ["south", "north"] else f"ny_{segstr}"
+    if boundary_dim not in ds[varname].dims:
+        raise ValueError(f"{varname}: expected boundary dimension {boundary_dim}; dims={ds[varname].dims}")
+
+    da = ds[varname]
+    values = np.asarray(da.values, dtype="float64")
+    initial_bad = _bad_numeric_mask(values, attrs=da.attrs)
+    initial_bad_count = int(initial_bad.sum())
+    if initial_bad_count:
+        print(
+            f"[PHY-OBC] Cleaning {initial_bad_count} fill-like/bad value(s) in {varname} "
+            f"along {boundary_dim} using nearest valid boundary values."
+        )
+        axis = da.get_axis_num(boundary_dim)
+        values = _fill_bad_values_nearest_along_axis(values, initial_bad, axis=axis, fallback=0.0)
+        ds[varname] = da.copy(data=values)
+        ds[varname].attrs.update(da.attrs)
+
+    final_bad = _bad_numeric_mask(ds[varname].values, attrs=ds[varname].attrs)
+    if bool(final_bad.any()):
+        raise ValueError(
+            f"{varname}: {int(final_bad.sum())} bad ZOS value(s) remain after cleaning; "
+            "refusing to write MOM6 OBC file."
+        )
+    return ds
+
 def flood_missing(arr, **kwargs):
     """Flood missing data (over land) using HCtFlood.
     Had some trouble installing HCtFlood on analysis, so it is
@@ -409,6 +500,9 @@ class Segment():
         if 'time' in ds.dims:
             other_dims = [d for d in ds.dims if d != 'time']
             ds = ds.transpose('time', *other_dims)
+
+        if varnames == 'zos':
+            ds = _clean_and_validate_zos_obc(ds, self.segstr, self.border)
 
         # ------------------------------------------------------------------
         # Fill values: apply to data_vars only (avoid coords/strings issues)
