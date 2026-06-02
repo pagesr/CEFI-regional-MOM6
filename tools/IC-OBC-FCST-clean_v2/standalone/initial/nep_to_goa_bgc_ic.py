@@ -110,6 +110,82 @@ TIME_UNITS = config.get("TIME_UNITS", "days since 1993-01-01 00:00:00")
 TIME_CAL = config.get("TIME_CAL", "proleptic_gregorian")
 
 
+IC_BAD_VALUE_ABS_THRESHOLD = float(config.get("bad_value_abs_threshold", 1.0e20))
+IC_FILL_SENTINELS = (1.0e20, 9.969209968386869e36, 9.96921e36, 9.969215e36)
+NONNEGATIVE_BGC_VARS = set(config.get("nonnegative_bgc_vars", BGC_VARS)) - set(config.get("allow_negative_bgc_vars", []))
+
+
+def _bad_ic_mask(values, attrs=None, threshold=IC_BAD_VALUE_ABS_THRESHOLD):
+    """Return a mask for NaN/Inf/fill-like/huge IC values."""
+    arr = np.asarray(values)
+    mask = ~np.isfinite(arr) | (np.abs(arr) >= threshold)
+    sentinels = list(IC_FILL_SENTINELS)
+    if attrs:
+        for key in ("_FillValue", "missing_value"):
+            raw = attrs.get(key)
+            if raw is None:
+                continue
+            for item in np.asarray(raw).ravel():
+                try:
+                    sentinels.append(float(item))
+                except (TypeError, ValueError):
+                    pass
+    for sentinel in sentinels:
+        if np.isfinite(sentinel):
+            mask |= np.isclose(arr, sentinel, rtol=0.0, atol=0.0)
+    return mask
+
+
+def sanitize_and_validate_bgc_ic(ds):
+    """Ensure every BGC IC data variable is finite and MOM6-safe before writing."""
+    ds = ds.copy()
+    cleaning_report = []
+    validation_failures = []
+
+    for name in ds.data_vars:
+        da = ds[name]
+        values = np.asarray(da.values, dtype="float64").copy()
+        bad = _bad_ic_mask(values, attrs=da.attrs)
+        bad_count = int(bad.sum())
+        neg_count = 0
+        if name in NONNEGATIVE_BGC_VARS:
+            neg = np.isfinite(values) & (values < 0.0)
+            neg_count = int(neg.sum())
+            bad |= neg
+
+        if bad.any():
+            values[bad] = 0.0
+            cleaned = da.copy(data=values)
+            cleaned.attrs.update(da.attrs)
+            ds[name] = cleaned
+            cleaning_report.append((name, bad_count, neg_count))
+
+        remaining_bad = _bad_ic_mask(ds[name].values, attrs=ds[name].attrs)
+        remaining_neg = np.zeros_like(remaining_bad, dtype=bool)
+        if name in NONNEGATIVE_BGC_VARS:
+            remaining_neg = np.isfinite(ds[name].values) & (ds[name].values < 0.0)
+        if bool(remaining_bad.any()) or bool(remaining_neg.any()):
+            validation_failures.append(
+                (name, int(remaining_bad.sum()), int(remaining_neg.sum()))
+            )
+
+    if cleaning_report:
+        print("[IC-BGC] Sanitized BGC IC variables before write:")
+        for name, bad_count, neg_count in cleaning_report:
+            print(
+                f"  {name:24s} bad_or_fill={bad_count:10d} "
+                f"negative_clipped={neg_count:10d}"
+            )
+
+    if validation_failures:
+        print("[IC-BGC] ERROR: invalid values remain after sanitizing:")
+        for name, bad_count, neg_count in validation_failures:
+            print(f"  {name:24s} bad_or_fill={bad_count} negative={neg_count}")
+        raise ValueError("BGC IC validation failed; refusing to write unsafe initial condition file")
+
+    return ds
+
+
 def rename_only_existing(da, mapping):
     """Rename only dims/coords that actually exist in this DataArray."""
     m = {k: v for k, v in mapping.items() if (k in da.dims) or (k in da.coords)}
@@ -280,6 +356,7 @@ ic = xr.Dataset(
     coords={"time": time, "zl": zl},
     attrs={"regrid_method": TRACER_METHOD},
 )
+ic = sanitize_and_validate_bgc_ic(ic)
 
 if DEBUG:
     print("--------------------------------------------------")
