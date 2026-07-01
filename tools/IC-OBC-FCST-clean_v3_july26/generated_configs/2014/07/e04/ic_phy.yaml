@@ -1,0 +1,22 @@
+GOA_STATIC: /archive/Remi.Pages/fre/Arc_12/2026_02.01/CGOA_BGC_2025_07_base_nep_phy_feb26/gfdl.ncrc6-intel23-prod/pp/ocean_daily/ocean_daily.static.nc
+NEP_STATIC: /archive/Liz.Drenkard/fre/cefi/NEP/2025_07/NEP10k_202507_physics_bgc/gfdl.ncrc6-intel23-repro/pp/ocean_daily/ocean_daily.static.nc
+nep_restart: /archive/Dmitry.Dukhovskoy/fre/NEP/hindcast_bgc/NEPbgc_nudged_hindcast02/restart/restdate_20140701/MOM_20140701.res.nc
+tracer_method: nearest_s2d
+uv_method: nearest_s2d
+reuse_weights: true
+REGRID_DIR: /work5/rnp/IC-BC-GOA/CEFI-regional-MOM6/tools/IC-OBC-FCST-clean_v3_july26/regrid_ic_phy_shared_v2
+regrid_tracer_weights: regrid_bilin.nc
+regrid_u_weights: regrid_bilin_uu.nc
+regrid_v_weights: regrid_bilin_vv.nc
+variable_names:
+  temperature: Temp
+  salinity: Salt
+  sea_surface_height: ave_ssh
+  zonal_velocity: u
+  meridional_velocity: v
+OUT_IC: /work5/rnp/IC-BC-GOA/CEFI-regional-MOM6/tools/IC-OBC-FCST-clean_v3_july26/output/2014/07/IC/ic_phy_20140701.nc
+IC_DATE: '2014-07-01T00:00:00'
+TIME_REF: '2014-07-01T00:00:00'
+TIME_UNITS: days since 2014-07-01 00:00:00
+TIME_CAL: gregorian
+regrid_method_attr: nearest_s2d
