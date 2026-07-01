@@ -12,3 +12,7 @@ html
 *.err
 *.log
 *.done*
+*.ipynb
+*.csv
+output*/
+*.png

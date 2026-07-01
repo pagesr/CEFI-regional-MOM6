@@ -1,0 +1,28 @@
+netcdf uv_002_1993 {
+dimensions:
+	time = UNLIMITED ; // (8760 currently)
+	nz_segment_002 = 52 ;
+	ny_segment_002 = 1057 ;
+	nx_segment_002 = 1 ;
+variables:
+	float u_segment_002(time, nz_segment_002, ny_segment_002, nx_segment_002) ;
+		u_segment_002:_FillValue = 1.e+20f ;
+		u_segment_002:regrid_method = "nearest_s2d" ;
+	float v_segment_002(time, nz_segment_002, ny_segment_002, nx_segment_002) ;
+		v_segment_002:_FillValue = 1.e+20f ;
+		v_segment_002:regrid_method = "nearest_s2d" ;
+	int nz_segment_002(nz_segment_002) ;
+	double time(time) ;
+		time:_FillValue = 1.e+20 ;
+		time:units = "hours since 1993-01-01" ;
+		time:calendar = "gregorian" ;
+	int ny_segment_002(ny_segment_002) ;
+	double dz_u_segment_002(time, nz_segment_002, ny_segment_002, nx_segment_002) ;
+		dz_u_segment_002:_FillValue = 1.e+20 ;
+	double dz_v_segment_002(time, nz_segment_002, ny_segment_002, nx_segment_002) ;
+		dz_v_segment_002:_FillValue = 1.e+20 ;
+	double lon_segment_002(ny_segment_002) ;
+		lon_segment_002:_FillValue = 1.e+20 ;
+	double lat_segment_002(ny_segment_002) ;
+		lat_segment_002:_FillValue = 1.e+20 ;
+}

@@ -1,0 +1,32 @@
+netcdf uv_001_1993_pad {
+dimensions:
+	time = UNLIMITED ; // (8761 currently)
+	nz_segment_001 = 52 ;
+	ny_segment_001 = 1 ;
+	nx_segment_001 = 961 ;
+variables:
+	float u_segment_001(time, nz_segment_001, ny_segment_001, nx_segment_001) ;
+		u_segment_001:_FillValue = 1.e+20f ;
+		u_segment_001:regrid_method = "nearest_s2d" ;
+	float v_segment_001(time, nz_segment_001, ny_segment_001, nx_segment_001) ;
+		v_segment_001:_FillValue = 1.e+20f ;
+		v_segment_001:regrid_method = "nearest_s2d" ;
+	int nz_segment_001(nz_segment_001) ;
+	double time(time) ;
+		time:_FillValue = 1.e+20 ;
+		time:units = "hours since 1993-01-01" ;
+		time:calendar = "gregorian" ;
+	int nx_segment_001(nx_segment_001) ;
+	double dz_u_segment_001(time, nz_segment_001, ny_segment_001, nx_segment_001) ;
+		dz_u_segment_001:_FillValue = 1.e+20 ;
+	double dz_v_segment_001(time, nz_segment_001, ny_segment_001, nx_segment_001) ;
+		dz_v_segment_001:_FillValue = 1.e+20 ;
+	double lon_segment_001(nx_segment_001) ;
+		lon_segment_001:_FillValue = 1.e+20 ;
+	double lat_segment_001(nx_segment_001) ;
+		lat_segment_001:_FillValue = 1.e+20 ;
+
+// global attributes:
+		:history = "Thu Feb 26 16:53:34 2026: ncrcat -O uv_001_1993.nc ./_tmp_pad/uv_001_1994_first.nc ./padded/uv_001_1993_pad.nc" ;
+		:NCO = "netCDF Operators version 5.2.4 (Homepage = http://nco.sf.net, Code = http://github.com/nco/nco, Citation = 10.1016/j.envsoft.2008.03.004)" ;
+}

@@ -1,0 +1,23 @@
+netcdf thetao_001_1993 {
+dimensions:
+	time = UNLIMITED ; // (8760 currently)
+	nz_segment_001 = 52 ;
+	ny_segment_001 = 1 ;
+	nx_segment_001 = 961 ;
+variables:
+	float thetao_segment_001(time, nz_segment_001, ny_segment_001, nx_segment_001) ;
+		thetao_segment_001:_FillValue = 1.e+20f ;
+		thetao_segment_001:regrid_method = "nearest_s2d" ;
+	int nz_segment_001(nz_segment_001) ;
+	double time(time) ;
+		time:_FillValue = 1.e+20 ;
+		time:units = "hours since 1993-01-01" ;
+		time:calendar = "gregorian" ;
+	int nx_segment_001(nx_segment_001) ;
+	double dz_thetao_segment_001(time, nz_segment_001, ny_segment_001, nx_segment_001) ;
+		dz_thetao_segment_001:_FillValue = 1.e+20 ;
+	double lon_segment_001(nx_segment_001) ;
+		lon_segment_001:_FillValue = 1.e+20 ;
+	double lat_segment_001(nx_segment_001) ;
+		lat_segment_001:_FillValue = 1.e+20 ;
+}

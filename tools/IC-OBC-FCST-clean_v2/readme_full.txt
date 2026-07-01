@@ -59,12 +59,13 @@ E) Reproducible command used to run all stages
 From `tools/IC-OBC-FCST-clean`:
 
   python submit_workflow.py \
-    --years 2013 \
-    --months 01 \
-    --ensembles 01 \
+    --years 2015 2016 \
+    --months 01 04 07 10\
+    --ensembles 01 02 03 04 05\
     --output-root ./output \
     --config-root ./generated_configs \
-    --task-root ./tasks
+    --task-root ./tasks \
+    --no-ic-dependency
 
 Notes:
 - `--output-root` is resolved to an absolute path at submit time.

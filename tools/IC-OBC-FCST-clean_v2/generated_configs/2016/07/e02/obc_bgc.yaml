@@ -1,0 +1,49 @@
+year: 2016
+month: '07'
+ensemble: '02'
+fct_dir: /archive/Dmitry.Dukhovskoy/fre/NEP/forecast_bgc/NEPbgc_fcst_dailyOB01
+time_sel: first12
+pad_last_time: true
+NEP_STATIC: /archive/Liz.Drenkard/fre/cefi/NEP/2025_07/NEP10k_202507_physics_bgc/gfdl.ncrc6-intel23-repro/pp/ocean_daily/ocean_daily.static.nc
+hgrid: /work/Remi.Pages/GOA2p5k/GRID/CGOA_2.5k/ocean_hgrid.nc
+output_dir: /work5/rnp/IC-BC-GOA/CEFI-regional-MOM6/tools/IC-OBC-FCST-clean_v2/output/2016/07/OBC/BGC/e02
+regrid_dir: /work5/rnp/IC-BC-GOA/CEFI-regional-MOM6/tools/IC-OBC-FCST-clean_v2/regrid_obc_bgc_shared_v2
+merge_to_single_file: true
+ncrcat_years: false
+ncrcat_names: []
+use_flooding: true
+segments:
+- id: 1
+  border: south
+- id: 2
+  border: west
+tracers:
+- alk
+- dic
+- po4
+- sio4
+- o2
+- no3
+- nh4
+- fed
+- fedet
+- ndet
+- nbact
+- nsmz
+- nmdz
+- nlgz
+- chl
+- chl_Lg
+- chl_Md
+- chl_Sm
+- chl_Di
+- simd
+- silg
+- ndi
+- nlg
+- nsm
+- nmd
+- pdi
+- plg
+- pmd
+- psm

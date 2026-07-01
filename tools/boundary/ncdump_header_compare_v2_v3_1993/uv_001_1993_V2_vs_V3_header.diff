@@ -1,0 +1,19 @@
+--- V2/uv_001_1993_pad.nc
++++ V3/uv_001_1993.nc
+@@ -1,6 +1,6 @@
+ netcdf FILE {
+ dimensions:
+-	time = UNLIMITED ; // (8761 currently)
++	time = UNLIMITED ; // (8760 currently)
+ 	nz_segment_001 = 52 ;
+ 	ny_segment_001 = 1 ;
+ 	nx_segment_001 = 961 ;
+@@ -25,8 +25,4 @@
+ 		lon_segment_001:_FillValue = 1.e+20 ;
+ 	double lat_segment_001(nx_segment_001) ;
+ 		lat_segment_001:_FillValue = 1.e+20 ;
+-
+-// global attributes:
+-		:history = "Thu Feb 26 16:53:34 2026: ncrcat -O uv_001_1993.nc ./_tmp_pad/uv_001_1994_first.nc ./padded/uv_001_1993_pad.nc" ;
+-		:NCO = "netCDF Operators version 5.2.4 (Homepage = http://nco.sf.net, Code = http://github.com/nco/nco, Citation = 10.1016/j.envsoft.2008.03.004)" ;
+ }

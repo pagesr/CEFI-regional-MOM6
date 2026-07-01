@@ -1,0 +1,26 @@
+--- V2/zos_002_1993_pad.nc
++++ V3/zos_002_1993.nc
+@@ -1,6 +1,6 @@
+ netcdf FILE {
+ dimensions:
+-	time = UNLIMITED ; // (8761 currently)
++	time = UNLIMITED ; // (8760 currently)
+ 	ny_segment_002 = 1057 ;
+ 	nx_segment_002 = 1 ;
+ variables:
+@@ -9,13 +9,10 @@
+ 		time:units = "hours since 1993-01-01" ;
+ 		time:calendar = "gregorian" ;
+ 	float zos_segment_002(time, ny_segment_002, nx_segment_002) ;
+-		zos_segment_002:_FillValue = NaNf ;
++		zos_segment_002:_FillValue = 1.e+20f ;
++		zos_segment_002:regrid_method = "nearest_s2d" ;
+ 	double lon_segment_002(ny_segment_002) ;
+ 		lon_segment_002:_FillValue = 1.e+20 ;
+ 	double lat_segment_002(ny_segment_002) ;
+ 		lat_segment_002:_FillValue = 1.e+20 ;
+-
+-// global attributes:
+-		:history = "Thu Feb 26 18:17:44 2026: ncrcat -O zos_002_1993.nc ./_tmp_pad/zos_002_1994_first.nc ./padded/zos_002_1993_pad.nc" ;
+-		:NCO = "netCDF Operators version 5.2.4 (Homepage = http://nco.sf.net, Code = http://github.com/nco/nco, Citation = 10.1016/j.envsoft.2008.03.004)" ;
+ }

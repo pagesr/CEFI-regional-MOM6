@@ -1,0 +1,18 @@
+netcdf zos_002_1993 {
+dimensions:
+	time = UNLIMITED ; // (8760 currently)
+	ny_segment_002 = 1057 ;
+	nx_segment_002 = 1 ;
+variables:
+	double time(time) ;
+		time:_FillValue = 1.e+20 ;
+		time:units = "hours since 1993-01-01" ;
+		time:calendar = "gregorian" ;
+	float zos_segment_002(time, ny_segment_002, nx_segment_002) ;
+		zos_segment_002:_FillValue = 1.e+20f ;
+		zos_segment_002:regrid_method = "nearest_s2d" ;
+	double lon_segment_002(ny_segment_002) ;
+		lon_segment_002:_FillValue = 1.e+20 ;
+	double lat_segment_002(ny_segment_002) ;
+		lat_segment_002:_FillValue = 1.e+20 ;
+}
